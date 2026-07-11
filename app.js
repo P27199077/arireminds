@@ -401,6 +401,19 @@ async function openConfigDrawer(reminderId = null) {
     document.getElementById('cfg-text-success').value = reminder.texts.success;
     document.getElementById('cfg-text-defer').value = reminder.texts.defer;
     
+    // Load coordinates and toggle custom pos controls visibility
+    const setupGrp = document.getElementById('custom-position-setup-grp');
+    if (reminder.screenPosition === 'custom') {
+      setupGrp.style.display = 'block';
+    } else {
+      setupGrp.style.display = 'none';
+    }
+    if (reminder.customX !== undefined && reminder.customY !== undefined) {
+      document.getElementById('lbl-custom-coords').textContent = `Coordinates: X: ${reminder.customX}, Y: ${reminder.customY}`;
+    } else {
+      document.getElementById('lbl-custom-coords').textContent = 'Coordinates: X: Not Configured, Y: Not Configured';
+    }
+
     // Load Repeat values
     const repeat = reminder.repeat || { type: 'none', additionalTimes: [], intervalValue: 1, intervalUnit: 'hours' };
     document.getElementById('cfg-reminder-repeat-type').value = repeat.type;
@@ -438,6 +451,8 @@ async function openConfigDrawer(reminderId = null) {
       enabled: true,
       screenPosition: 'bottom-right',
       scale: 1.0,
+      customX: undefined,
+      customY: undefined,
       repeat: {
         type: 'none',
         additionalTimes: [],
@@ -470,6 +485,9 @@ async function openConfigDrawer(reminderId = null) {
     document.getElementById('specific-times-list').innerHTML = '';
     document.getElementById('cfg-repeat-interval-value').value = 1;
     document.getElementById('cfg-repeat-interval-unit').value = 'hours';
+    
+    document.getElementById('custom-position-setup-grp').style.display = 'none';
+    document.getElementById('lbl-custom-coords').textContent = 'Coordinates: X: Not Configured, Y: Not Configured';
     
     // Clear uploader previews
     const zones = document.querySelectorAll('.upload-zone');
@@ -570,6 +588,8 @@ function handleProfileFormSubmit(e) {
     existing.scale = scale;
     existing.texts = texts;
     existing.repeat = repeat;
+    existing.customX = state.editingReminder.customX;
+    existing.customY = state.editingReminder.customY;
   } else {
     // Create new
     state.editingReminder.title = title;
@@ -1161,6 +1181,45 @@ window.addEventListener('DOMContentLoaded', async () => {
     addSpecificTimePicker();
   });
 
+  // Bind Corner Placement dropdown change events
+  document.getElementById('cfg-screen-position').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const setupGrp = document.getElementById('custom-position-setup-grp');
+    if (val === 'custom') {
+      setupGrp.style.display = 'block';
+    } else {
+      setupGrp.style.display = 'none';
+    }
+  });
+
+  // Bind Set Custom Position button click
+  document.getElementById('btn-set-custom-pos').addEventListener('click', () => {
+    if (isElectron && state.editingReminder) {
+      // Pull scale from current scale slider in the drawer
+      const currentScale = parseFloat(document.getElementById('cfg-popup-scale').value);
+      state.editingReminder.scale = currentScale;
+      
+      const payload = {
+        reminderId: state.editingReminder.id,
+        settings: {
+          reminderTime: document.getElementById('cfg-reminder-time').value,
+          screenPosition: 'custom',
+          scale: currentScale,
+          customX: state.editingReminder.customX,
+          customY: state.editingReminder.customY
+        },
+        hasVideos: {
+          'walk-in': !!state.editingReminder.hasVideos['walk-in'],
+          'action': !!state.editingReminder.hasVideos['action'],
+          'walk-out': !!state.editingReminder.hasVideos['walk-out']
+        }
+      };
+      ipcRenderer.send('trigger-widget-positioner', payload);
+    } else {
+      alert("Custom positioning calibration is only supported in native desktop mode!");
+    }
+  });
+
   // Listen for messages from popup widget (Web Fallback)
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'TASKS_COMPLETED_YES') {
@@ -1172,6 +1231,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (isElectron) {
     ipcRenderer.on('sync-tasks-completed', () => {
       completeAllTasks();
+    });
+    
+    ipcRenderer.on('custom-position-saved', (event, arg) => {
+      if (state.editingReminder) {
+        state.editingReminder.customX = arg.x;
+        state.editingReminder.customY = arg.y;
+        state.editingReminder.scale = arg.scale;
+        
+        // Update the drawer inputs in real-time
+        document.getElementById('cfg-popup-scale').value = arg.scale;
+        document.getElementById('val-popup-scale').textContent = arg.scale.toFixed(1) + 'x';
+        document.getElementById('lbl-custom-coords').textContent = `Coordinates: X: ${arg.x}, Y: ${arg.y}`;
+        
+        showNotification('Position Saved', `Ari Reminds will now open at coordinates X: ${arg.x}, Y: ${arg.y} with a ${arg.scale.toFixed(1)}x character scale!`);
+      }
     });
   }
 });

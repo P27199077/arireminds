@@ -218,6 +218,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Bind buttons immediately
   document.getElementById('btn-yes').addEventListener('click', () => setWidgetState('happy'));
   document.getElementById('btn-no').addEventListener('click', () => setWidgetState('sad'));
+  document.getElementById('btn-save-position').addEventListener('click', () => {
+    if (isElectron) {
+      const currentScale = parseFloat(document.getElementById('positioner-scale-slider').value);
+      ipcRenderer.send('save-custom-position', { scale: currentScale });
+    }
+  });
+
+  const positionerSlider = document.getElementById('positioner-scale-slider');
+  const positionerScaleVal = document.getElementById('positioner-scale-val');
+  positionerSlider.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    positionerScaleVal.textContent = val.toFixed(1) + 'x';
+    document.documentElement.style.setProperty('--widget-scale', val);
+  });
 
   if (isElectron) {
     // Listen for data from Electron main process
@@ -229,7 +243,22 @@ window.addEventListener('DOMContentLoaded', async () => {
       document.documentElement.style.setProperty('--widget-scale', settings.scale);
       mascotInstance = Mascot.mount('widget-fallback-container', 'idle');
       await loadVideoAssets();
-      setWidgetState('walkin');
+      
+      if (payload.isPositionerMode) {
+        document.body.classList.add('is-positioner-mode');
+        document.getElementById('speech-text').textContent = "Drag me anywhere on your screen, and adjust my scale slider below!";
+        document.getElementById('positioner-actions').style.display = 'flex';
+        document.getElementById('speech-actions').style.display = 'none';
+        
+        // Populate slider
+        positionerSlider.value = settings.scale || 1.0;
+        positionerScaleVal.textContent = parseFloat(positionerSlider.value).toFixed(1) + 'x';
+        document.documentElement.style.setProperty('--widget-scale', positionerSlider.value);
+        
+        setWidgetState('ask');
+      } else {
+        setWidgetState('walkin');
+      }
     });
   } else {
     // Web Fallback load from localStorage

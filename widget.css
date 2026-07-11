@@ -200,4 +200,17 @@ body.is-electron .widget-viewport {
   background: transparent !important;
 }
 
+/* Drag handle support for custom positioning mode */
+body.is-electron.is-positioner-mode {
+  cursor: move;
+}
+body.is-electron.is-positioner-mode .mascot-wrapper {
+  -webkit-app-region: drag;
+}
+body.is-electron.is-positioner-mode .btn-action,
+body.is-electron.is-positioner-mode .speech-bubble,
+body.is-electron.is-positioner-mode input[type="range"] {
+  -webkit-app-region: no-drag;
+}
+
 

@@ -23,6 +23,18 @@
           <i class="fa-solid fa-xmark"></i> Not yet
         </button>
       </div>
+      <div class="speech-actions" id="positioner-actions" style="display: none; flex-direction: column; gap: 8px; width: 100%;">
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; border-top: 1px solid var(--border-glass); padding-top: 8px; width: 100%;">
+          <label style="font-size: 0.75rem; color: var(--text-muted); text-align: left; display: block; width: 100%;">Mascot Scale</label>
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <input type="range" id="positioner-scale-slider" min="0.6" max="1.5" step="0.1" value="1.0" style="flex-grow: 1; cursor: pointer; accent-color: var(--primary);">
+            <span id="positioner-scale-val" style="font-size: 0.75rem; min-width: 28px; font-family: monospace;">1.0x</span>
+          </div>
+        </div>
+        <button class="btn-action btn-yes" id="btn-save-position" style="width: 100%; justify-content: center; border: none; padding: 8px;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Position & Scale
+        </button>
+      </div>
     </div>
 
     <!-- Mascot Wrapper -->

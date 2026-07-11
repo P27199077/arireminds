@@ -70,6 +70,10 @@ ipcMain.on('trigger-widget', (event, payload) => {
       left = screenX + 20;
       top = screenY + 20;
       break;
+    case 'custom':
+      left = payload.settings.customX !== undefined ? payload.settings.customX : (screenX + screenW - widgetW - 20);
+      top = payload.settings.customY !== undefined ? payload.settings.customY : (screenY + screenH - widgetH - 20);
+      break;
   }
 
   // Create native transparent frameless overlay
@@ -102,7 +106,59 @@ ipcMain.on('trigger-widget', (event, payload) => {
   });
 });
 
+ipcMain.on('trigger-widget-positioner', (event, payload) => {
+  if (widgetWindow) {
+    widgetWindow.close();
+    widgetWindow = null;
+  }
 
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenW, height: screenH, x: screenX, y: screenY } = primaryDisplay.workArea;
+
+  const widgetW = 480;
+  const widgetH = 400;
+
+  let left = payload.settings.customX !== undefined ? payload.settings.customX : screenX + Math.round((screenW - widgetW) / 2);
+  let top = payload.settings.customY !== undefined ? payload.settings.customY : screenY + Math.round((screenH - widgetH) / 2);
+
+  widgetWindow = new BrowserWindow({
+    width: widgetW,
+    height: widgetH,
+    x: left,
+    y: top,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  widgetWindow.loadFile('widget.html');
+
+  payload.isPositionerMode = true;
+
+  widgetWindow.webContents.on('did-finish-load', () => {
+    widgetWindow.webContents.send('init-widget', payload);
+  });
+
+  widgetWindow.on('closed', () => {
+    widgetWindow = null;
+  });
+});
+
+ipcMain.on('save-custom-position', (event, arg) => {
+  if (widgetWindow && dashboardWindow) {
+    const [x, y] = widgetWindow.getPosition();
+    dashboardWindow.webContents.send('custom-position-saved', { x, y, scale: arg.scale });
+    widgetWindow.close();
+    widgetWindow = null;
+  }
+});
 
 ipcMain.on('close-widget', () => {
   if (widgetWindow) {
