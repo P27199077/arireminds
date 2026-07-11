@@ -97,8 +97,11 @@ ipcMain.on('trigger-widget', (event, payload) => {
   widgetWindow.loadFile('widget.html');
 
   // Once loaded, transmit payload data directly to widget renderer
-  widgetWindow.webContents.on('did-finish-load', () => {
-    widgetWindow.webContents.send('init-widget', payload);
+  const targetWebContents = widgetWindow.webContents;
+  targetWebContents.on('did-finish-load', () => {
+    if (!targetWebContents.isDestroyed()) {
+      targetWebContents.send('init-widget', payload);
+    }
   });
 
   widgetWindow.on('closed', () => {
@@ -142,8 +145,11 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
 
   payload.isPositionerMode = true;
 
-  widgetWindow.webContents.on('did-finish-load', () => {
-    widgetWindow.webContents.send('init-widget', payload);
+  const targetWebContents = widgetWindow.webContents;
+  targetWebContents.on('did-finish-load', () => {
+    if (!targetWebContents.isDestroyed()) {
+      targetWebContents.send('init-widget', payload);
+    }
   });
 
   widgetWindow.on('closed', () => {
@@ -157,6 +163,13 @@ ipcMain.on('save-custom-position', (event, arg) => {
     dashboardWindow.webContents.send('custom-position-saved', { x, y, scale: arg.scale });
     widgetWindow.close();
     widgetWindow = null;
+  }
+});
+
+ipcMain.on('move-widget-window', (event, arg) => {
+  if (widgetWindow) {
+    const [x, y] = widgetWindow.getPosition();
+    widgetWindow.setPosition(x + arg.deltaX, y + arg.deltaY);
   }
 });
 

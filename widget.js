@@ -232,7 +232,37 @@ window.addEventListener('DOMContentLoaded', async () => {
     positionerScaleVal.textContent = val.toFixed(1) + 'x';
     document.documentElement.style.setProperty('--widget-scale', val);
   });
+  // Set up dragging listeners for custom positioning calibration mode
+  let isDragging = false;
+  let startMouseX = 0;
+  let startMouseY = 0;
 
+  const mascotWrapper = document.querySelector('.mascot-wrapper');
+  if (mascotWrapper) {
+    mascotWrapper.addEventListener('mousedown', (e) => {
+      if (!document.body.classList.contains('is-positioner-mode')) return;
+      isDragging = true;
+      startMouseX = e.screenX;
+      startMouseY = e.screenY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.screenX - startMouseX;
+      const deltaY = e.screenY - startMouseY;
+      
+      startMouseX = e.screenX;
+      startMouseY = e.screenY;
+
+      if (isElectron) {
+        ipcRenderer.send('move-widget-window', { deltaX, deltaY });
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  }
   if (isElectron) {
     // Listen for data from Electron main process
     ipcRenderer.on('init-widget', async (event, payload) => {

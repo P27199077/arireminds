@@ -848,7 +848,9 @@ async function triggerWidgetWindow(reminder) {
       reminderTime: reminder.time,
       screenPosition: reminder.screenPosition,
       scale: reminder.scale,
-      texts: reminder.texts
+      texts: reminder.texts,
+      customX: reminder.customX,
+      customY: reminder.customY
     },
     hasVideos: {
       'walk-in': !!reminder.hasVideos['walk-in'],

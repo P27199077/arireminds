@@ -172,6 +172,7 @@ body {
   height: 100%;
   display: block;
   z-index: 5;
+  pointer-events: none;
 }
 
 /* Styling changes when SUCCESS or DEFER states are triggered */
