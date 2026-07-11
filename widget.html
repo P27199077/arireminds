@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ari Reminds Assistant</title>
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="widget.css">
+  <!-- FontAwesome Icons for speech icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="widget-viewport" id="widget-viewport">
+    
+    <!-- Floating Speech Bubble -->
+    <div class="speech-bubble" id="speech-bubble">
+      <div class="speech-content" id="speech-text">Hey there! It's time for your daily review.</div>
+      <div class="speech-actions" id="speech-actions" style="display: none;">
+        <button class="btn-action btn-yes" id="btn-yes">
+          <i class="fa-solid fa-check"></i> Yes, done!
+        </button>
+        <button class="btn-action btn-no" id="btn-no">
+          <i class="fa-solid fa-xmark"></i> Not yet
+        </button>
+      </div>
+    </div>
+
+    <!-- Mascot Wrapper -->
+    <div class="mascot-wrapper">
+      <!-- 1. Video Player Container -->
+      <video id="widget-video" class="mascot-video" muted playsinline></video>
+
+      <!-- 2. Fallback SVG Vector Container -->
+      <div id="widget-fallback-container" class="mascot-fallback-container">
+        <!-- SVG injected by mascot.js -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="mascot.js"></script>
+  <script src="widget.js"></script>
+</body>
+</html>

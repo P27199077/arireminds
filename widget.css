@@ -1,0 +1,203 @@
+/*
+ * widget.css
+ * Styling layout and animations for the standalone Ari Reminds widget popup.
+ * Tailored to look clean, floating, and premium with interactive speech bubbles.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+
+:root {
+  /* Dynamic values synchronized by script */
+  --widget-scale: 1.0;
+  --primary: #9d4edd;
+  --secondary: #ff007f;
+  --bg-dark: rgba(10, 8, 18, 0.95);
+  
+  --font-display: 'Outfit', 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: transparent;
+  font-family: var(--font-body);
+  color: #ffffff;
+  user-select: none;
+}
+
+/* Base Viewport Box */
+.widget-viewport {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  
+  /* Backdrop overlay gradient to blend with mascot styling */
+  background: radial-gradient(circle at bottom center, rgba(157, 78, 221, 0.15) 0%, rgba(10, 8, 18, 0.92) 80%);
+}
+
+/* Speech Bubble styles */
+.speech-bubble {
+  background: var(--bg-dark);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 10px rgba(157, 78, 221, 0.25);
+  width: calc(100% - 24px);
+  max-width: 320px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 100;
+  animation: slideUpBubble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  box-sizing: border-box;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: var(--bg-dark) transparent;
+  display: block;
+  width: 0;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 9px 9px 0;
+  border-style: solid;
+  border-color: var(--primary) transparent;
+  display: block;
+  width: 0;
+  z-index: -1;
+}
+
+@keyframes slideUpBubble {
+  0% { transform: translateY(15px) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.speech-content {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  text-align: center;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  word-wrap: break-word;
+}
+
+/* Action Buttons Container inside speech bubble */
+.speech-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.btn-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.btn-yes {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: none;
+  box-shadow: 0 2px 10px rgba(157, 78, 221, 0.4);
+}
+
+.btn-yes:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(157, 78, 221, 0.6);
+}
+
+.btn-no:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Mascot Containers */
+.mascot-wrapper {
+  width: 140px;
+  height: 160px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-bottom: 4px;
+  transform: scale(var(--widget-scale));
+  transform-origin: bottom center;
+}
+
+/* Video Player Layer */
+.mascot-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: none; /* hidden if fallback is active */
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Fallback SVG Layer */
+.mascot-fallback-container {
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 5;
+}
+
+/* Styling changes when SUCCESS or DEFER states are triggered */
+.speech-bubble.state-success {
+  border-color: var(--secondary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 0, 127, 0.35);
+}
+.speech-bubble.state-success::before {
+  border-color: var(--secondary) transparent;
+}
+
+.speech-bubble.state-defer {
+  border-color: #00f0ff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 240, 255, 0.35);
+}
+.speech-bubble.state-defer::before {
+  border-color: #00f0ff transparent;
+}
+
+/* Electron-specific transparency overrides */
+body.is-electron {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+body.is-electron .widget-viewport {
+  background: transparent !important;
+}
+
+

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ari Reminds - Desktop Mascot Assistant</title>
+  <meta name="description" content="A premium customizable daily task assistant featuring an interactive desktop video mascot check-in and task reminder system.">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome Icons for modern aesthetic -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand-section">
+          <div class="brand-logo">A</div>
+          <div class="brand-name">Ari Reminds</div>
+        </div>
+        
+        <nav class="nav-menu">
+          <ul class="nav-links">
+            <li class="nav-item">
+              <button class="nav-button active" data-tab="dashboard">
+                <i class="fa-solid fa-gauge-high"></i>
+                Dashboard
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-button" data-tab="tasks">
+                <i class="fa-solid fa-list-check"></i>
+                Task Manager
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-button" data-tab="reminders">
+                <i class="fa-solid fa-bell"></i>
+                Reminders Manager
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-button" data-tab="help">
+                <i class="fa-solid fa-circle-question"></i>
+                Setup Guide
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="mascot-status-mini">
+          <span class="status-indicator"></span>
+          <span id="mascot-active-lbl">Mode: Desktop (Ari)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="main-content">
+      
+      <!-- 1. DASHBOARD TAB -->
+      <section id="dashboard" class="tab-panel active">
+        <div class="content-header">
+          <div class="header-title-group">
+            <h1>Dashboard</h1>
+            <p>Monitor your active goal check-ins and run live emulator reviews.</p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Countdown Box & Quick Stats -->
+          <div class="dashboard-left flex-column" style="display:flex; flex-direction:column; gap:2rem;">
+            <div class="glass-card countdown-box" id="dashboard-countdown-card">
+              <i class="fa-regular fa-bell" style="font-size: 2rem; color: var(--accent-cyan)"></i>
+              <h3 id="lbl-countdown-title">Next Scheduled Check-in</h3>
+              <div class="countdown-timer" id="countdown-display">00:00:00</div>
+              <p style="color: var(--text-muted); font-size: 0.85rem;" id="lbl-countdown-sub">No enabled reminders found.</p>
+            </div>
+
+            <div class="glass-card">
+              <h3 class="card-title"><i class="fa-solid fa-chart-simple"></i> Daily Progress Overview</h3>
+              <div class="stat-grid">
+                <div class="stat-card">
+                  <div class="stat-val primary" id="stat-pending-tasks">0</div>
+                  <div class="stat-lbl">Pending Tasks</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-val secondary" id="stat-completed-percent">0%</div>
+                  <div class="stat-lbl">Tasks Completed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Emulator Preview -->
+          <div class="dashboard-right">
+            <div class="glass-card">
+              <h3 class="card-title">
+                <i class="fa-solid fa-tv"></i> 
+                Live Emulator Preview
+              </h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                Runs a quick, simulated mockup sequence inside your dashboard to test speech bubbles and fallback animations.
+              </p>
+              
+              <div class="emulator-canvas">
+                <div class="emulator-grid-marker"></div>
+                <!-- Emulator Widget container -->
+                <div class="emulator-widget-slot" id="emulator-widget-slot">
+                  <div class="emulator-widget-bubble" id="emulator-bubble">
+                    <span id="emulator-bubble-text">Hi! Let's check on your goals.</span>
+                    <div class="emulator-bubble-actions" id="emulator-bubble-actions" style="display:none;">
+                      <button class="btn-mini btn-mini-yes" id="btn-emulator-yes">Yes</button>
+                      <button class="btn-mini" id="btn-emulator-no">No</button>
+                    </div>
+                  </div>
+                  <div class="emulator-mascot-container" id="emulator-mascot">
+                    <!-- mascot.js mounts SVG here -->
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top: 1rem;">
+                <span style="font-size:0.75rem; color:var(--text-muted);">Current State: <strong id="emulator-state-lbl" style="color:var(--primary)">IDLE</strong></span>
+                <button id="btn-emulator-reset" class="btn-mini" style="padding: 4px 10px;">Reset Preview</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. TASKS TAB -->
+      <section id="tasks" class="tab-panel">
+        <div class="content-header">
+          <div class="header-title-group">
+            <h1>Task Manager</h1>
+            <p>Define your daily checklist. Ari will query these tasks during mascot check-ins.</p>
+          </div>
+        </div>
+
+        <div class="glass-card" style="max-width: 800px; margin: 0 auto;">
+          <h3 class="card-title"><i class="fa-solid fa-list-check"></i> Manage Daily Tasks</h3>
+          <div class="task-header">
+            <input type="text" id="task-input-field" class="task-input" placeholder="Type a new task and press Enter..." maxlength="80">
+            <button id="btn-add-task" class="btn btn-primary" style="padding: 0 24px;">
+              <i class="fa-solid fa-plus"></i> Add
+            </button>
+          </div>
+
+          <div class="task-list" id="task-list-container">
+            <!-- Dynamically populated -->
+            <div class="empty-state" id="tasks-empty-state">
+              <i class="fa-regular fa-clipboard"></i>
+              <p>No tasks configured yet. Add some to get started!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. REMINDERS TAB (COMBINED & PROFILED) -->
+      <section id="reminders" class="tab-panel">
+        <div class="content-header">
+          <div class="header-title-group">
+            <h1>Reminders Manager</h1>
+            <p>Configure multiple schedules. Save isolated dialogue bubbles and video clips per reminder.</p>
+          </div>
+          <div class="header-actions">
+            <button id="btn-create-reminder" class="btn btn-primary">
+              <i class="fa-solid fa-plus"></i> Create Reminder
+            </button>
+          </div>
+        </div>
+
+        <!-- Reminders List Grid -->
+        <div class="grid-3col" id="reminders-grid-container">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Empty reminders state -->
+        <div class="empty-state" id="reminders-empty-state" style="display: none;">
+          <i class="fa-regular fa-bell-slash" style="font-size: 3rem; color: rgba(255, 255, 255, 0.05); margin-bottom: 1.25rem;"></i>
+          <p>No check-in reminders saved yet. Click 'Create Reminder' above to build your first schedule!</p>
+        </div>
+
+        <!-- Configuration Slider Drawer (Slide-out config panel) -->
+        <div class="config-drawer-overlay" id="config-drawer-overlay"></div>
+        <div class="config-drawer" id="config-drawer">
+          <div class="drawer-header">
+            <h2 id="drawer-title-label">Create Reminder Profile</h2>
+            <button class="btn-close-drawer" id="btn-close-drawer" title="Close"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          
+          <div class="drawer-content">
+            <form id="reminder-profile-form">
+              <input type="hidden" id="cfg-reminder-id">
+              
+              <div class="form-grid">
+                <!-- Reminder Title -->
+                <div class="form-group">
+                  <label class="form-label" for="cfg-reminder-title">Reminder Title</label>
+                  <input type="text" id="cfg-reminder-title" class="form-input-text" placeholder="e.g. Gym Session, Running Time" required maxlength="30">
+                </div>
+
+                <!-- Daily Trigger Time -->
+                <div class="form-group">
+                  <label class="form-label" for="cfg-reminder-time">Scheduled Daily Time</label>
+                  <input type="time" id="cfg-reminder-time" class="form-input-text" required value="17:00">
+                </div>
+
+                <!-- Repeat Options -->
+                <div class="form-group">
+                  <label class="form-label" for="cfg-reminder-repeat-type">Repeat Schedule</label>
+                  <select id="cfg-reminder-repeat-type" class="form-select">
+                    <option value="none">Once a day</option>
+                    <option value="specific">Specific times (multiple times a day)</option>
+                    <option value="interval">Repeat at fixed intervals</option>
+                  </select>
+                </div>
+
+                <!-- Repeat: Specific Times Sub-form -->
+                <div class="form-group full-width" id="repeat-specific-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: var(--border-radius-md); margin-bottom: 0.5rem;">
+                  <label class="form-label" style="margin-bottom: 8px;">Additional Trigger Times</label>
+                  <div id="specific-times-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <!-- Dynamic time pickers appended here -->
+                  </div>
+                  <button type="button" id="btn-add-specific-time" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.25);">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--secondary); margin-right: 4px;"></i> Add Trigger Time
+                  </button>
+                </div>
+
+                <!-- Repeat: Intervals Sub-form -->
+                <div class="form-group full-width" id="repeat-interval-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: var(--border-radius-md); margin-bottom: 0.5rem;">
+                  <label class="form-label" style="margin-bottom: 8px;">Interval Configuration</label>
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+                    <span>Repeat every</span>
+                    <input type="number" id="cfg-repeat-interval-value" class="form-input-text" style="width: 70px; text-align: center; padding: 6px;" min="1" max="1440" value="1">
+                    <select id="cfg-repeat-interval-unit" class="form-select" style="width: 110px; padding: 6px;">
+                      <option value="hours">Hours</option>
+                      <option value="minutes">Minutes</option>
+                    </select>
+                    <span>after initial trigger time.</span>
+                  </div>
+                </div>
+
+                <!-- Popup Position -->
+                <div class="form-group">
+                  <label class="form-label" for="cfg-screen-position">Mascot Corner Placement</label>
+                  <select id="cfg-screen-position" class="form-select">
+                    <option value="bottom-right">Bottom Right Corner</option>
+                    <option value="bottom-left">Bottom Left Corner</option>
+                    <option value="top-right">Top Right Corner</option>
+                    <option value="top-left">Top Left Corner</option>
+                  </select>
+                </div>
+
+                <!-- Window Scale -->
+                <div class="form-group">
+                  <label class="form-label" for="cfg-popup-scale">Mascot Widget Scale</label>
+                  <div class="slider-container">
+                    <input type="range" id="cfg-popup-scale" class="range-slider" min="0.6" max="1.5" step="0.1" value="1.0">
+                    <span class="slider-val" id="val-popup-scale">1.0x</span>
+                  </div>
+                </div>
+
+                <!-- Speech Bubble customization headers -->
+                <div class="form-group full-width" style="border-top: 1px solid var(--border-glass); padding-top: 1.25rem; margin-top: 0.5rem;">
+                  <h4 style="color: var(--primary);">Custom Dialogue Text bubbles</h4>
+                </div>
+
+                <!-- Phase 1 speech -->
+                <div class="form-group full-width">
+                  <label class="form-label" for="cfg-text-walkin">Phase 1: Greeting Speech</label>
+                  <input type="text" id="cfg-text-walkin" class="form-input-text" placeholder="Hey! Time for your daily goal check-in. Don't forget your tasks!" required>
+                </div>
+
+                <!-- Phase 2 speech -->
+                <div class="form-group full-width">
+                  <label class="form-label" for="cfg-text-action">Phase 2: Question Prompt</label>
+                  <input type="text" id="cfg-text-action" class="form-input-text" placeholder="Did you finish your tasks for today? Let's be honest!" required>
+                </div>
+
+                <!-- Phase 3 success speech -->
+                <div class="form-group full-width">
+                  <label class="form-label" for="cfg-text-success">Phase 3A: Answer Yes (Success Dialogue)</label>
+                  <input type="text" id="cfg-text-success" class="form-input-text" placeholder="Oh that's good. I'm proud of you! Keep up the amazing work! 🥰" required>
+                </div>
+
+                <!-- Phase 3 defer speech -->
+                <div class="form-group full-width">
+                  <label class="form-label" for="cfg-text-defer">Phase 3B: Answer No (Defer/Failure Dialogue)</label>
+                  <input type="text" id="cfg-text-defer" class="form-input-text" placeholder="Okay, I'll come back to remind you again later. You can do it! 💪" required>
+                </div>
+
+                <!-- Mascot video uploads slots -->
+                <div class="form-group full-width" style="border-top: 1px solid var(--border-glass); padding-top: 1.25rem; margin-top: 0.5rem;">
+                  <h4 style="color: var(--secondary);">Mascot Video Sequencer Assets (Optional)</h4>
+                  <p style="color:var(--text-muted); font-size:0.75rem; margin-top:4px;">
+                    Upload custom clips for this specific reminder. Leave empty to use the hand-animated fallback mascot.
+                  </p>
+                </div>
+
+                <!-- Upload Grid -->
+                <div class="form-group full-width">
+                  <div class="upload-drawer-grid">
+                    
+                    <!-- Slot 1: Walk-In -->
+                    <div class="upload-drawer-card">
+                      <div class="upload-zone" id="zone-walk-in" data-slot="walk-in">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <div class="upload-label" style="font-size:0.8rem;">1. Mascot Walk-In</div>
+                        <input type="file" class="file-input" accept="video/mp4, video/webm">
+                        <div class="upload-preview-container">
+                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
+                          <video class="preview-video" muted loop playsinline></video>
+                          <span class="video-label-tag">Walk In</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Slot 2: Action -->
+                    <div class="upload-drawer-card">
+                      <div class="upload-zone" id="zone-action" data-slot="action">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <div class="upload-label" style="font-size:0.8rem;">2. Question Action</div>
+                        <input type="file" class="file-input" accept="video/mp4, video/webm">
+                        <div class="upload-preview-container">
+                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
+                          <video class="preview-video" muted loop playsinline></video>
+                          <span class="video-label-tag">Question</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Slot 3: Walk-Out -->
+                    <div class="upload-drawer-card">
+                      <div class="upload-zone" id="zone-walk-out" data-slot="walk-out">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <div class="upload-label" style="font-size:0.8rem;">3. Mascot Walk-Out</div>
+                        <input type="file" class="file-input" accept="video/mp4, video/webm">
+                        <div class="upload-preview-container">
+                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
+                          <video class="preview-video" muted loop playsinline></video>
+                          <span class="video-label-tag">Walk Out</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Drawer actions -->
+              <div class="drawer-actions-panel">
+                <button type="button" id="btn-cancel-reminder" class="btn btn-secondary">Cancel</button>
+                <button type="submit" id="btn-save-profile-submit" class="btn btn-primary">Save Reminder Settings</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. SETUP GUIDE TAB -->
+      <section id="help" class="tab-panel">
+        <div class="content-header">
+          <div class="header-title-group">
+            <h1>Setup Guide</h1>
+            <p>Learn how to get the most out of your Ari Reminds widget helper.</p>
+          </div>
+        </div>
+
+        <div class="glass-card" style="max-width: 900px;">
+          <h3 class="card-title"><i class="fa-solid fa-circle-question"></i> Step-by-step Setup</h3>
+          
+          <div class="instruction-steps">
+            <!-- Step 1 -->
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Add Tasks</h3>
+                <p>Go to the <strong>Task Manager</strong> tab and register your tasks for the day. Setting tasks makes the reminder relevant and feeds stats to your progress dashboard.</p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Create Custom Reminders</h3>
+                <p>Navigate to the <strong>Reminders Manager</strong> tab and click **Create Reminder**. You can configure a gym check-in at 6:00 PM and a running alert at 7:00 AM separately!</p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Upload Isolated Videos</h3>
+                <p>Inside the edit form of any reminder profile, you can upload specific clips (MP4/WebM) representing the mascot actions. If none are provided, the app plays *Ari*, a hand-designed CSS-animated fallback character, completely free of charge!</p>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-card">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h3>Start the Application Natively</h3>
+                <p>Ensure that you keep the Ari Reminds desktop dashboard open in the background of your laptop. The main clock monitor will automatically check schedules and trigger mascot overlays at the exact configured times.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-alert">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+              <strong>Quick Test Helper:</strong> You can click the **Test Play (play button)** directly on any reminder profile card inside the Reminders Manager tab to bypass scheduled clocks and immediately run its specific assets sequence!
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="mascot.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
