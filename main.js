@@ -158,18 +158,24 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
 });
 
 ipcMain.on('save-custom-position', (event, arg) => {
+  console.log("MAIN PROCESS: save-custom-position received with scale:", arg.scale);
   if (widgetWindow && dashboardWindow) {
     const [x, y] = widgetWindow.getPosition();
+    console.log("MAIN PROCESS: Widget position is:", x, y, "Sending custom-position-saved to dashboard renderer");
     dashboardWindow.webContents.send('custom-position-saved', { x, y, scale: arg.scale });
     widgetWindow.close();
     widgetWindow = null;
+  } else {
+    console.warn("MAIN PROCESS: Warning - widgetWindow or dashboardWindow was null!", !!widgetWindow, !!dashboardWindow);
   }
 });
 
 ipcMain.on('move-widget-window', (event, arg) => {
   if (widgetWindow) {
     const [x, y] = widgetWindow.getPosition();
-    widgetWindow.setPosition(x + arg.deltaX, y + arg.deltaY);
+    const targetX = Math.round(x + arg.deltaX);
+    const targetY = Math.round(y + arg.deltaY);
+    widgetWindow.setPosition(targetX, targetY);
   }
 });
 

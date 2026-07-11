@@ -1208,7 +1208,8 @@ window.addEventListener('DOMContentLoaded', async () => {
           screenPosition: 'custom',
           scale: currentScale,
           customX: state.editingReminder.customX,
-          customY: state.editingReminder.customY
+          customY: state.editingReminder.customY,
+          texts: state.editingReminder.texts
         },
         hasVideos: {
           'walk-in': !!state.editingReminder.hasVideos['walk-in'],
@@ -1236,6 +1237,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
     
     ipcRenderer.on('custom-position-saved', (event, arg) => {
+      console.log("DASHBOARD RENDERER: custom-position-saved received in app.js with:", arg);
       if (state.editingReminder) {
         state.editingReminder.customX = arg.x;
         state.editingReminder.customY = arg.y;
@@ -1247,6 +1249,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('lbl-custom-coords').textContent = `Coordinates: X: ${arg.x}, Y: ${arg.y}`;
         
         showNotification('Position Saved', `Ari Reminds will now open at coordinates X: ${arg.x}, Y: ${arg.y} with a ${arg.scale.toFixed(1)}x character scale!`);
+      } else {
+        console.warn("DASHBOARD RENDERER: WARNING - state.editingReminder was null when custom-position-saved triggered!");
       }
     });
   }

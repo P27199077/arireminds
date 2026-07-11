@@ -83,6 +83,7 @@ async function setWidgetState(stateName) {
   const bubble = document.getElementById('speech-bubble');
   const bubbleText = document.getElementById('speech-text');
   const actions = document.getElementById('speech-actions');
+  const isPositioner = document.body.classList.contains('is-positioner-mode');
   
   if (mascotInstance) {
     mascotInstance.setState(stateName);
@@ -120,8 +121,15 @@ async function setWidgetState(stateName) {
       break;
       
     case 'ask':
-      bubbleText.textContent = settings.texts.action;
-      actions.style.display = 'flex';
+      if (isPositioner) {
+        bubbleText.textContent = "Drag me anywhere on your screen, and adjust my scale slider below!";
+        actions.style.display = 'none';
+        document.getElementById('positioner-actions').style.display = 'flex';
+      } else {
+        bubbleText.textContent = settings.texts.action;
+        actions.style.display = 'flex';
+        document.getElementById('positioner-actions').style.display = 'none';
+      }
       
       if (hasVideos['action'] && videoUrls['action']) {
         fallbackContainer.style.display = 'none';
@@ -219,8 +227,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-yes').addEventListener('click', () => setWidgetState('happy'));
   document.getElementById('btn-no').addEventListener('click', () => setWidgetState('sad'));
   document.getElementById('btn-save-position').addEventListener('click', () => {
+    console.log("WIDGET RENDERER: Save Position & Scale clicked!");
     if (isElectron) {
       const currentScale = parseFloat(document.getElementById('positioner-scale-slider').value);
+      console.log("WIDGET RENDERER: Sending save-custom-position IPC with scale", currentScale);
       ipcRenderer.send('save-custom-position', { scale: currentScale });
     }
   });
@@ -232,37 +242,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     positionerScaleVal.textContent = val.toFixed(1) + 'x';
     document.documentElement.style.setProperty('--widget-scale', val);
   });
+
   // Set up dragging listeners for custom positioning calibration mode
   let isDragging = false;
   let startMouseX = 0;
   let startMouseY = 0;
 
-  const mascotWrapper = document.querySelector('.mascot-wrapper');
-  if (mascotWrapper) {
-    mascotWrapper.addEventListener('mousedown', (e) => {
-      if (!document.body.classList.contains('is-positioner-mode')) return;
+  document.addEventListener('mousedown', (e) => {
+    if (!document.body.classList.contains('is-positioner-mode')) return;
+    
+    // Check if clicking the mascot wrapper or any of its subelements
+    const wrapper = document.querySelector('.mascot-wrapper');
+    if (wrapper && wrapper.contains(e.target)) {
       isDragging = true;
       startMouseX = e.screenX;
       startMouseY = e.screenY;
-    });
+      e.preventDefault(); // Prevents default browser image drag shadow overlays
+    }
+  });
 
-    window.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const deltaX = e.screenX - startMouseX;
-      const deltaY = e.screenY - startMouseY;
-      
-      startMouseX = e.screenX;
-      startMouseY = e.screenY;
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const deltaX = e.screenX - startMouseX;
+    const deltaY = e.screenY - startMouseY;
+    
+    startMouseX = e.screenX;
+    startMouseY = e.screenY;
 
-      if (isElectron) {
-        ipcRenderer.send('move-widget-window', { deltaX, deltaY });
-      }
-    });
+    if (isElectron) {
+      ipcRenderer.send('move-widget-window', { deltaX, deltaY });
+    }
+  });
 
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-  }
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
   if (isElectron) {
     // Listen for data from Electron main process
     ipcRenderer.on('init-widget', async (event, payload) => {
