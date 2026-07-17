@@ -76,8 +76,8 @@ let trimmerRafId = null;
 function startVideoTimeWatcher(onTimeUpdate) {
   function watch() {
     const player = document.getElementById('widget-video');
-    if (player && !player.paused) {
-      onTimeUpdate(player.currentTime);
+    if (player) {
+      onTimeUpdate(player);
     }
     trimmerRafId = requestAnimationFrame(watch);
   }
@@ -129,10 +129,13 @@ async function setWidgetState(stateName) {
         
         try {
           await videoPlayer.play();
-          startVideoTimeWatcher((time) => {
-            if (time >= dividePoint1) {
+          startVideoTimeWatcher((player) => {
+            if (player.currentTime >= dividePoint1) {
               stopVideoTimeWatcher();
               setWidgetState('ask');
+            }
+            if (player.paused && activeState === 'walkin') {
+              player.play().catch(err => console.warn("Walk-in play error:", err));
             }
           });
         } catch(e) {
@@ -168,9 +171,15 @@ async function setWidgetState(stateName) {
         
         try {
           await videoPlayer.play();
-          startVideoTimeWatcher((time) => {
-            if (time >= dividePoint2) {
-              videoPlayer.currentTime = dividePoint1;
+          startVideoTimeWatcher((player) => {
+            if (player.currentTime >= dividePoint2) {
+              player.currentTime = dividePoint1;
+              if (player.paused) {
+                player.play().catch(err => console.warn("Ask loop play error on reset:", err));
+              }
+            }
+            if (player.paused && activeState === 'ask') {
+              player.play().catch(err => console.warn("Ask loop play error:", err));
             }
           });
         } catch(e) {
@@ -203,10 +212,13 @@ async function setWidgetState(stateName) {
         
         try {
           await videoPlayer.play();
-          startVideoTimeWatcher((time) => {
-            if (time >= videoPlayer.duration - 0.1 || videoPlayer.ended) {
+          startVideoTimeWatcher((player) => {
+            if (player.currentTime >= player.duration - 0.1 || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
+            }
+            if (player.paused && activeState === 'happy') {
+              player.play().catch(err => console.warn("Happy walk-out play error:", err));
             }
           });
         } catch(e) {
@@ -234,10 +246,13 @@ async function setWidgetState(stateName) {
         
         try {
           await videoPlayer.play();
-          startVideoTimeWatcher((time) => {
-            if (time >= videoPlayer.duration - 0.1 || videoPlayer.ended) {
+          startVideoTimeWatcher((player) => {
+            if (player.currentTime >= player.duration - 0.1 || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
+            }
+            if (player.paused && activeState === 'sad') {
+              player.play().catch(err => console.warn("Sad walk-out play error:", err));
             }
           });
         } catch(e) {
