@@ -134,9 +134,6 @@ async function setWidgetState(stateName) {
               stopVideoTimeWatcher();
               setWidgetState('ask');
             }
-            if (player.paused && activeState === 'walkin') {
-              player.play().catch(err => console.warn("Walk-in play error:", err));
-            }
           });
         } catch(e) {
           console.warn("Video walk-in play blocked, fallback in 4s", e);
@@ -171,15 +168,18 @@ async function setWidgetState(stateName) {
         
         try {
           await videoPlayer.play();
+          let isSeeking = false;
           startVideoTimeWatcher((player) => {
+            if (isSeeking) return;
             if (player.currentTime >= dividePoint2) {
+              isSeeking = true;
               player.currentTime = dividePoint1;
-              if (player.paused) {
-                player.play().catch(err => console.warn("Ask loop play error on reset:", err));
-              }
-            }
-            if (player.paused && activeState === 'ask') {
-              player.play().catch(err => console.warn("Ask loop play error:", err));
+              const onSeeked = () => {
+                player.removeEventListener('seeked', onSeeked);
+                isSeeking = false;
+                player.play().catch(err => {});
+              };
+              player.addEventListener('seeked', onSeeked);
             }
           });
         } catch(e) {
@@ -217,9 +217,6 @@ async function setWidgetState(stateName) {
               stopVideoTimeWatcher();
               closeWidget();
             }
-            if (player.paused && activeState === 'happy') {
-              player.play().catch(err => console.warn("Happy walk-out play error:", err));
-            }
           });
         } catch(e) {
           console.warn("Video blocked, closing in 5s", e);
@@ -250,9 +247,6 @@ async function setWidgetState(stateName) {
             if (player.currentTime >= player.duration - 0.1 || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
-            }
-            if (player.paused && activeState === 'sad') {
-              player.play().catch(err => console.warn("Sad walk-out play error:", err));
             }
           });
         } catch(e) {
