@@ -869,11 +869,9 @@ async function triggerWidgetWindow(reminder) {
       customX: reminder.customX,
       customY: reminder.customY
     },
-    hasVideos: {
-      'walk-in': !!reminder.hasVideos['walk-in'],
-      'action': !!reminder.hasVideos['action'],
-      'walk-out': !!reminder.hasVideos['walk-out']
-    }
+    hasCombinedVideo: !!reminder.hasCombinedVideo,
+    dividePoint1: reminder.dividePoint1 || 0.0,
+    dividePoint2: reminder.dividePoint2 || 0.0
   };
   
   if (isElectron) {
