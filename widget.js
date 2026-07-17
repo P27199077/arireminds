@@ -106,11 +106,20 @@ async function setWidgetState(stateName) {
   }
   
   stopVideoTimeWatcher();
-  videoPlayer.style.display = 'none';
-  fallbackContainer.style.display = 'block';
-  videoPlayer.pause();
   
   const useVideo = hasCombinedVideo && combinedVideoUrl;
+  
+  if (useVideo) {
+    fallbackContainer.style.display = 'none';
+    videoPlayer.style.display = 'block';
+    if (videoPlayer.src !== combinedVideoUrl) {
+      videoPlayer.src = combinedVideoUrl;
+    }
+  } else {
+    videoPlayer.style.display = 'none';
+    fallbackContainer.style.display = 'block';
+    videoPlayer.pause();
+  }
   
   switch(stateName) {
     case 'walkin':
@@ -119,11 +128,6 @@ async function setWidgetState(stateName) {
       actions.style.display = 'none';
       
       if (useVideo) {
-        fallbackContainer.style.display = 'none';
-        videoPlayer.style.display = 'block';
-        if (videoPlayer.src !== combinedVideoUrl) {
-          videoPlayer.src = combinedVideoUrl;
-        }
         videoPlayer.loop = false;
         videoPlayer.currentTime = 0.0;
         
@@ -158,16 +162,18 @@ async function setWidgetState(stateName) {
       }
       
       if (useVideo) {
-        fallbackContainer.style.display = 'none';
-        videoPlayer.style.display = 'block';
-        if (videoPlayer.src !== combinedVideoUrl) {
-          videoPlayer.src = combinedVideoUrl;
-        }
         videoPlayer.loop = false;
-        videoPlayer.currentTime = dividePoint1;
+        
+        // Only seek to dividePoint1 if the video is not already near it
+        if (Math.abs(videoPlayer.currentTime - dividePoint1) > 0.4) {
+          videoPlayer.currentTime = dividePoint1;
+        }
         
         try {
-          await videoPlayer.play();
+          if (videoPlayer.paused) {
+            await videoPlayer.play();
+          }
+          
           let isSeeking = false;
           startVideoTimeWatcher((player) => {
             if (isSeeking) return;
@@ -202,11 +208,6 @@ async function setWidgetState(stateName) {
       }
       
       if (useVideo) {
-        fallbackContainer.style.display = 'none';
-        videoPlayer.style.display = 'block';
-        if (videoPlayer.src !== combinedVideoUrl) {
-          videoPlayer.src = combinedVideoUrl;
-        }
         videoPlayer.loop = false;
         videoPlayer.currentTime = dividePoint2;
         
@@ -233,11 +234,6 @@ async function setWidgetState(stateName) {
       actions.style.display = 'none';
       
       if (useVideo) {
-        fallbackContainer.style.display = 'none';
-        videoPlayer.style.display = 'block';
-        if (videoPlayer.src !== combinedVideoUrl) {
-          videoPlayer.src = combinedVideoUrl;
-        }
         videoPlayer.loop = false;
         videoPlayer.currentTime = dividePoint2;
         
