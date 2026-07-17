@@ -196,167 +196,161 @@
             <form id="reminder-profile-form">
               <input type="hidden" id="cfg-reminder-id">
               
-              <div class="form-grid">
-                <!-- Reminder Title -->
-                <div class="form-group">
-                  <label class="form-label" for="cfg-reminder-title">Reminder Title</label>
-                  <input type="text" id="cfg-reminder-title" class="form-input-text" placeholder="e.g. Gym Session, Running Time" required maxlength="30">
-                </div>
-
-                <!-- Daily Trigger Time -->
-                <div class="form-group">
-                  <label class="form-label" for="cfg-reminder-time">Scheduled Daily Time</label>
-                  <input type="time" id="cfg-reminder-time" class="form-input-text" required value="17:00">
-                </div>
-
-                <!-- Repeat Options -->
-                <div class="form-group">
-                  <label class="form-label" for="cfg-reminder-repeat-type">Repeat Schedule</label>
-                  <select id="cfg-reminder-repeat-type" class="form-select">
-                    <option value="none">Once a day</option>
-                    <option value="specific">Specific times (multiple times a day)</option>
-                    <option value="interval">Repeat at fixed intervals</option>
-                  </select>
-                </div>
-
-                <!-- Repeat: Specific Times Sub-form -->
-                <div class="form-group full-width" id="repeat-specific-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: var(--border-radius-md); margin-bottom: 0.5rem;">
-                  <label class="form-label" style="margin-bottom: 8px;">Additional Trigger Times</label>
-                  <div id="specific-times-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-                    <!-- Dynamic time pickers appended here -->
+              <div class="drawer-form-columns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 8px;">
+                
+                <!-- Left Column: General Configuration -->
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <!-- Reminder Title -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-reminder-title">Reminder Title</label>
+                    <input type="text" id="cfg-reminder-title" class="form-input-text" placeholder="e.g. Gym Session, Running Time" required maxlength="30" style="padding: 8px;">
                   </div>
-                  <button type="button" id="btn-add-specific-time" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.25);">
-                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--secondary); margin-right: 4px;"></i> Add Trigger Time
-                  </button>
-                </div>
 
-                <!-- Repeat: Intervals Sub-form -->
-                <div class="form-group full-width" id="repeat-interval-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: var(--border-radius-md); margin-bottom: 0.5rem;">
-                  <label class="form-label" style="margin-bottom: 8px;">Interval Configuration</label>
-                  <div style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
-                    <span>Repeat every</span>
-                    <input type="number" id="cfg-repeat-interval-value" class="form-input-text" style="width: 70px; text-align: center; padding: 6px;" min="1" max="1440" value="1">
-                    <select id="cfg-repeat-interval-unit" class="form-select" style="width: 110px; padding: 6px;">
-                      <option value="hours">Hours</option>
-                      <option value="minutes">Minutes</option>
+                  <!-- Daily Trigger Time -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-reminder-time">Scheduled Daily Time</label>
+                    <input type="time" id="cfg-reminder-time" class="form-input-text" required value="17:00" style="padding: 8px;">
+                  </div>
+
+                  <!-- Repeat Options -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-reminder-repeat-type">Repeat Schedule</label>
+                    <select id="cfg-reminder-repeat-type" class="form-select" style="padding: 8px;">
+                      <option value="none">Once a day</option>
+                      <option value="specific">Specific times (multiple times a day)</option>
+                      <option value="interval">Repeat at fixed intervals</option>
                     </select>
-                    <span>after initial trigger time.</span>
                   </div>
-                </div>
 
-                <!-- Popup Position -->
-                <div class="form-group">
-                  <label class="form-label" for="cfg-screen-position">Mascot Corner Placement</label>
-                  <select id="cfg-screen-position" class="form-select">
-                    <option value="bottom-right">Bottom Right Corner</option>
-                    <option value="bottom-left">Bottom Left Corner</option>
-                    <option value="top-right">Top Right Corner</option>
-                    <option value="top-left">Top Left Corner</option>
-                    <option value="custom">Custom Position (Drag-to-place)</option>
-                  </select>
-                </div>
-
-                <!-- Custom Position Coordinate Setup Controls -->
-                <div class="form-group full-width" id="custom-position-setup-grp" style="display: none; margin-bottom: 0.5rem;">
-                  <label class="form-label">Position Coordinate Settings</label>
-                  <div style="display: flex; gap: 16px; align-items: center; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: var(--border-radius-md);">
-                    <button type="button" id="btn-set-custom-pos" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-color: rgba(157, 78, 221, 0.3);">
-                      <i class="fa-solid fa-arrows-to-eye" style="color: var(--primary);"></i> Set Custom Position & Scale...
+                  <!-- Repeat: Specific Times Sub-form -->
+                  <div class="form-group" id="repeat-specific-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 10px 14px; border-radius: var(--border-radius-md); margin-bottom: 0.25rem;">
+                    <label class="form-label" style="margin-bottom: 4px; font-size: 0.75rem;">Additional Trigger Times</label>
+                    <div id="specific-times-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; max-height: 80px; overflow-y: auto;">
+                      <!-- Dynamic time pickers appended here -->
+                    </div>
+                    <button type="button" id="btn-add-specific-time" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.7rem; border-color: rgba(157, 78, 221, 0.25);">
+                      <i class="fa-solid fa-clock-rotate-left" style="color: var(--secondary); margin-right: 4px;"></i> Add Trigger Time
                     </button>
-                    <span id="lbl-custom-coords" style="font-size: 0.9rem; color: var(--text-muted); font-family: monospace;">Coordinates: X: Not Configured, Y: Not Configured</span>
                   </div>
-                </div>
 
-                <!-- Window Scale -->
-                <div class="form-group">
-                  <label class="form-label" for="cfg-popup-scale">Mascot Widget Scale</label>
-                  <div class="slider-container">
-                    <input type="range" id="cfg-popup-scale" class="range-slider" min="0.6" max="1.5" step="0.1" value="1.0">
-                    <span class="slider-val" id="val-popup-scale">1.0x</span>
-                  </div>
-                </div>
-
-                <!-- Speech Bubble customization headers -->
-                <div class="form-group full-width" style="border-top: 1px solid var(--border-glass); padding-top: 1.25rem; margin-top: 0.5rem;">
-                  <h4 style="color: var(--primary);">Custom Dialogue Text bubbles</h4>
-                </div>
-
-                <!-- Phase 1 speech -->
-                <div class="form-group full-width">
-                  <label class="form-label" for="cfg-text-walkin">Phase 1: Greeting Speech</label>
-                  <input type="text" id="cfg-text-walkin" class="form-input-text" placeholder="Hey! Time for your daily goal check-in. Don't forget your tasks!" required>
-                </div>
-
-                <!-- Phase 2 speech -->
-                <div class="form-group full-width">
-                  <label class="form-label" for="cfg-text-action">Phase 2: Question Prompt</label>
-                  <input type="text" id="cfg-text-action" class="form-input-text" placeholder="Did you finish your tasks for today? Let's be honest!" required>
-                </div>
-
-                <!-- Phase 3 success speech -->
-                <div class="form-group full-width">
-                  <label class="form-label" for="cfg-text-success">Phase 3A: Answer Yes (Success Dialogue)</label>
-                  <input type="text" id="cfg-text-success" class="form-input-text" placeholder="Oh that's good. I'm proud of you! Keep up the amazing work! 🥰" required>
-                </div>
-
-                <!-- Phase 3 defer speech -->
-                <div class="form-group full-width">
-                  <label class="form-label" for="cfg-text-defer">Phase 3B: Answer No (Defer/Failure Dialogue)</label>
-                  <input type="text" id="cfg-text-defer" class="form-input-text" placeholder="Okay, I'll come back to remind you again later. You can do it! 💪" required>
-                </div>
-
-                <!-- Mascot video uploads slots -->
-                <div class="form-group full-width" style="border-top: 1px solid var(--border-glass); padding-top: 1.25rem; margin-top: 0.5rem;">
-                  <h4 style="color: var(--secondary);">Mascot Video Sequencer Assets (Optional)</h4>
-                  <p style="color:var(--text-muted); font-size:0.75rem; margin-top:4px;">
-                    Upload a single combined mascot video, and set dividing time keyframes to slice it into Walk-In, Action Loop, and Walk-Out segments. Leave empty to use the fallback mascot.
-                  </p>
-                </div>
-
-                <!-- Upload Grid -->
-                <div class="form-group full-width">
-                  <div class="upload-drawer-grid" style="grid-template-columns: 1fr;">
-                    
-                    <!-- Unified Slot: Combined Video -->
-                    <div class="upload-drawer-card" style="width: 100%;">
-                      <div class="upload-zone" id="zone-combined" data-slot="combined" style="height: 180px; flex-direction: column;">
-                        <i class="fa-solid fa-file-video upload-icon" style="font-size: 2.5rem; color: var(--primary);"></i>
-                        <div class="upload-label" style="font-size:0.9rem; margin-top: 8px;">Upload Single Combined Video (.mp4)</div>
-                        <input type="file" id="cfg-combined-video" class="file-input" accept="video/mp4, video/webm">
-                        <div class="upload-preview-container" id="trimmer-preview-container">
-                          <button type="button" class="btn-remove-video" id="btn-remove-combined" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
-                          <video class="preview-video" id="trimmer-video" controls muted playsinline style="max-height: 150px; width: auto; max-width: 100%; border-radius: var(--border-radius-sm);"></video>
-                        </div>
-                      </div>
+                  <!-- Repeat: Intervals Sub-form -->
+                  <div class="form-group" id="repeat-interval-container" style="display: none; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 10px 14px; border-radius: var(--border-radius-md); margin-bottom: 0.25rem;">
+                    <label class="form-label" style="margin-bottom: 4px; font-size: 0.75rem;">Interval Configuration</label>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem;">
+                      <span>Every</span>
+                      <input type="number" id="cfg-repeat-interval-value" class="form-input-text" style="width: 50px; text-align: center; padding: 4px;" min="1" max="1440" value="1">
+                      <select id="cfg-repeat-interval-unit" class="form-select" style="width: 90px; padding: 4px;">
+                        <option value="hours">Hours</option>
+                        <option value="minutes">Minutes</option>
+                      </select>
                     </div>
+                  </div>
 
+                  <!-- Popup Position -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-screen-position">Mascot Corner Placement</label>
+                    <select id="cfg-screen-position" class="form-select" style="padding: 8px;">
+                      <option value="bottom-right">Bottom Right Corner</option>
+                      <option value="bottom-left">Bottom Left Corner</option>
+                      <option value="top-right">Top Right Corner</option>
+                      <option value="top-left">Top Left Corner</option>
+                      <option value="custom">Custom Position (Drag-to-place)</option>
+                    </select>
+                  </div>
+
+                  <!-- Custom Position Coordinate Setup Controls -->
+                  <div class="form-group" id="custom-position-setup-grp" style="display: none; margin-bottom: 0.25rem;">
+                    <div style="display: flex; gap: 10px; align-items: center; background: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-glass); padding: 8px 12px; border-radius: var(--border-radius-md);">
+                      <button type="button" id="btn-set-custom-pos" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.3);">
+                        <i class="fa-solid fa-arrows-to-eye" style="color: var(--primary);"></i> Set Position...
+                      </button>
+                      <span id="lbl-custom-coords" style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">X: None, Y: None</span>
+                    </div>
+                  </div>
+
+                  <!-- Window Scale -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-popup-scale">Mascot Widget Scale</label>
+                    <div class="slider-container" style="gap: 10px;">
+                      <input type="range" id="cfg-popup-scale" class="range-slider" min="0.6" max="1.5" step="0.1" value="1.0" style="height: 6px;">
+                      <span class="slider-val" id="val-popup-scale" style="font-size: 0.8rem; min-width: 28px;">1.0x</span>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Keyframe Divide Points Setting -->
-                <div class="form-group full-width" style="margin-top: 0.5rem;">
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted);">1. Walk-In End Time (seconds)</label>
-                      <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="number" id="cfg-divide-1" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 8px; font-family: monospace;">
-                        <button type="button" id="btn-set-divide-1" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current video time">
-                          <i class="fa-solid fa-clock"></i> Set Current
+                <!-- Right Column: Speech Dialogue Customization -->
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <div class="form-group">
+                    <label class="form-label" style="color: var(--primary); margin-bottom: 2px;">Custom Dialogue Bubbles</label>
+                  </div>
+
+                  <!-- Phase 1 speech -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-text-walkin" style="font-size: 0.75rem;">Phase 1: Greeting Speech</label>
+                    <input type="text" id="cfg-text-walkin" class="form-input-text" placeholder="Hey! Time for your daily goal check-in." required style="padding: 8px;">
+                  </div>
+
+                  <!-- Phase 2 speech -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-text-action" style="font-size: 0.75rem;">Phase 2: Question Prompt</label>
+                    <input type="text" id="cfg-text-action" class="form-input-text" placeholder="Did you finish your tasks for today?" required style="padding: 8px;">
+                  </div>
+
+                  <!-- Phase 3 success speech -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-text-success" style="font-size: 0.75rem;">Phase 3A: Answer Yes (Success)</label>
+                    <input type="text" id="cfg-text-success" class="form-input-text" placeholder="Oh that's good. I'm proud of you!" required style="padding: 8px;">
+                  </div>
+
+                  <!-- Phase 3 defer speech -->
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-text-defer" style="font-size: 0.75rem;">Phase 3B: Answer No (Defer)</label>
+                    <input type="text" id="cfg-text-defer" class="form-input-text" placeholder="Okay, I'll come back to remind you again later." required style="padding: 8px;">
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Mascot video uploader trimmer row -->
+              <div style="border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 8px; display: grid; grid-template-columns: 4fr 5fr; gap: 20px; align-items: center;">
+                
+                <!-- Left: Trimmer Video Preview -->
+                <div class="upload-drawer-card" style="width: 100%; margin: 0;">
+                  <div class="upload-zone" id="zone-combined" data-slot="combined" style="height: 120px; flex-direction: column; padding: 10px;">
+                    <i class="fa-solid fa-file-video upload-icon" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 2px;"></i>
+                    <div class="upload-label" style="font-size:0.75rem;">Upload Combined Video (.mp4)</div>
+                    <input type="file" id="cfg-combined-video" class="file-input" accept="video/mp4, video/webm">
+                    <div class="upload-preview-container" id="trimmer-preview-container" style="background: rgba(0,0,0,0.4);">
+                      <button type="button" class="btn-remove-video" id="btn-remove-combined" title="Remove video" style="width: 20px; height: 20px; font-size: 0.75rem; top: 4px; right: 4px;"><i class="fa-solid fa-xmark"></i></button>
+                      <video class="preview-video" id="trimmer-video" controls muted playsinline style="max-height: 100px; width: auto; max-width: 100%; border-radius: var(--border-radius-sm);"></video>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Trimmer Keyframes config -->
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="gap: 4px;">
+                      <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">1. Walk-In End (s)</label>
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <input type="number" id="cfg-divide-1" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 6px; font-family: monospace; font-size: 0.8rem; width: 60px;">
+                        <button type="button" id="btn-set-divide-1" class="btn btn-secondary" style="padding: 6px 8px; font-size: 0.7rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current time">
+                          Set
                         </button>
                       </div>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted);">2. Action Loop End Time (seconds)</label>
-                      <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="number" id="cfg-divide-2" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 8px; font-family: monospace;">
-                        <button type="button" id="btn-set-divide-2" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current video time">
-                          <i class="fa-solid fa-clock"></i> Set Current
+                    <div class="form-group" style="gap: 4px;">
+                      <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">2. Action Loop End (s)</label>
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <input type="number" id="cfg-divide-2" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 6px; font-family: monospace; font-size: 0.8rem; width: 60px;">
+                        <button type="button" id="btn-set-divide-2" class="btn btn-secondary" style="padding: 6px 8px; font-size: 0.7rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current time">
+                          Set
                         </button>
                       </div>
                     </div>
                   </div>
-                  <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 8px; line-height: 1.3;">
-                    ℹ️ **How it works:** Walk-In runs from `0.0s` to `Divide 1`. The loop runs between `Divide 1` and `Divide 2` until you answer. Walk-Out runs from `Divide 2` to the end of the video.
+                  <p style="color: var(--text-muted); font-size: 0.65rem; line-height: 1.25; margin: 0;">
+                    ℹ️ Combined video split points: `0.0s` to `Divide 1` is Greeting, `Divide 1` to `Divide 2` loops, and `Divide 2` to end is Walk-Out.
                   </p>
                 </div>
 
