@@ -11,14 +11,12 @@ const ipcRenderer = isElectron ? require('electron').ipcRenderer : null;
 // State tracking
 let reminderId = 'default';
 let settings = null;
-let hasVideos = {};
+let hasCombinedVideo = false;
+let dividePoint1 = 0.0;
+let dividePoint2 = 0.0;
 let activeState = 'idle';
 let mascotInstance = null;
-let videoUrls = {
-  'walk-in': null,
-  'action': null,
-  'walk-out': null
-};
+let combinedVideoUrl = null;
 
 const DB_NAME = 'AriVideosDB';
 const STORE_NAME = 'videos';
@@ -53,28 +51,46 @@ async function fetchVideoBlob(slot) {
 
 // Prepare video sources from DB Blob items
 async function loadVideoAssets() {
-  for (const slot of Object.keys(videoUrls)) {
-    if (hasVideos[slot]) {
-      const blob = await fetchVideoBlob(slot);
-      if (blob) {
-        videoUrls[slot] = URL.createObjectURL(blob);
-      } else {
-        hasVideos[slot] = false;
-      }
+  if (hasCombinedVideo) {
+    const blob = await fetchVideoBlob('combined');
+    if (blob) {
+      combinedVideoUrl = URL.createObjectURL(blob);
+    } else {
+      hasCombinedVideo = false;
     }
   }
 }
 
 // Clean up object URLs on exit
 window.addEventListener('beforeunload', () => {
-  Object.values(videoUrls).forEach(url => {
-    if (url) URL.revokeObjectURL(url);
-  });
+  if (combinedVideoUrl) {
+    URL.revokeObjectURL(combinedVideoUrl);
+  }
 });
 
 // ----------------------------------------------------
 // STATE MACHINE ROUTER
 // ----------------------------------------------------
+let trimmerRafId = null;
+
+function startVideoTimeWatcher(onTimeUpdate) {
+  function watch() {
+    const player = document.getElementById('widget-video');
+    if (player && !player.paused) {
+      onTimeUpdate(player.currentTime);
+    }
+    trimmerRafId = requestAnimationFrame(watch);
+  }
+  trimmerRafId = requestAnimationFrame(watch);
+}
+
+function stopVideoTimeWatcher() {
+  if (trimmerRafId) {
+    cancelAnimationFrame(trimmerRafId);
+    trimmerRafId = null;
+  }
+}
+
 async function setWidgetState(stateName) {
   activeState = stateName;
   
@@ -89,10 +105,12 @@ async function setWidgetState(stateName) {
     mascotInstance.setState(stateName);
   }
   
+  stopVideoTimeWatcher();
   videoPlayer.style.display = 'none';
   fallbackContainer.style.display = 'block';
-  
   videoPlayer.pause();
+  
+  const useVideo = hasCombinedVideo && combinedVideoUrl;
   
   switch(stateName) {
     case 'walkin':
@@ -100,17 +118,25 @@ async function setWidgetState(stateName) {
       bubbleText.textContent = settings.texts.walkin;
       actions.style.display = 'none';
       
-      if (hasVideos['walk-in'] && videoUrls['walk-in']) {
+      if (useVideo) {
         fallbackContainer.style.display = 'none';
         videoPlayer.style.display = 'block';
-        videoPlayer.src = videoUrls['walk-in'];
+        if (videoPlayer.src !== combinedVideoUrl) {
+          videoPlayer.src = combinedVideoUrl;
+        }
         videoPlayer.loop = false;
-        videoPlayer.onended = () => setWidgetState('ask');
+        videoPlayer.currentTime = 0.0;
         
         try {
           await videoPlayer.play();
+          startVideoTimeWatcher((time) => {
+            if (time >= dividePoint1) {
+              stopVideoTimeWatcher();
+              setWidgetState('ask');
+            }
+          });
         } catch(e) {
-          console.warn("Video autoplay blocked, proceeding with timer fallback", e);
+          console.warn("Video walk-in play blocked, fallback in 4s", e);
           setTimeout(() => setWidgetState('ask'), 4000);
         }
       } else {
@@ -131,17 +157,24 @@ async function setWidgetState(stateName) {
         document.getElementById('positioner-actions').style.display = 'none';
       }
       
-      if (hasVideos['action'] && videoUrls['action']) {
+      if (useVideo) {
         fallbackContainer.style.display = 'none';
         videoPlayer.style.display = 'block';
-        videoPlayer.src = videoUrls['action'];
-        videoPlayer.loop = true;
-        videoPlayer.onended = null;
+        if (videoPlayer.src !== combinedVideoUrl) {
+          videoPlayer.src = combinedVideoUrl;
+        }
+        videoPlayer.loop = false;
+        videoPlayer.currentTime = dividePoint1;
         
         try {
           await videoPlayer.play();
+          startVideoTimeWatcher((time) => {
+            if (time >= dividePoint2) {
+              videoPlayer.currentTime = dividePoint1;
+            }
+          });
         } catch(e) {
-          console.warn("Autoplay blocked for loop", e);
+          console.warn("Loop playback blocked", e);
         }
       }
       break;
@@ -159,15 +192,23 @@ async function setWidgetState(stateName) {
         }
       }
       
-      if (hasVideos['walk-out'] && videoUrls['walk-out']) {
+      if (useVideo) {
         fallbackContainer.style.display = 'none';
         videoPlayer.style.display = 'block';
-        videoPlayer.src = videoUrls['walk-out'];
+        if (videoPlayer.src !== combinedVideoUrl) {
+          videoPlayer.src = combinedVideoUrl;
+        }
         videoPlayer.loop = false;
-        videoPlayer.onended = () => closeWidget();
+        videoPlayer.currentTime = dividePoint2;
         
         try {
           await videoPlayer.play();
+          startVideoTimeWatcher((time) => {
+            if (time >= videoPlayer.duration - 0.1 || videoPlayer.ended) {
+              stopVideoTimeWatcher();
+              closeWidget();
+            }
+          });
         } catch(e) {
           console.warn("Video blocked, closing in 5s", e);
           setTimeout(closeWidget, 5000);
@@ -182,15 +223,23 @@ async function setWidgetState(stateName) {
       bubbleText.textContent = settings.texts.defer;
       actions.style.display = 'none';
       
-      if (hasVideos['walk-out'] && videoUrls['walk-out']) {
+      if (useVideo) {
         fallbackContainer.style.display = 'none';
         videoPlayer.style.display = 'block';
-        videoPlayer.src = videoUrls['walk-out'];
+        if (videoPlayer.src !== combinedVideoUrl) {
+          videoPlayer.src = combinedVideoUrl;
+        }
         videoPlayer.loop = false;
-        videoPlayer.onended = () => closeWidget();
+        videoPlayer.currentTime = dividePoint2;
         
         try {
           await videoPlayer.play();
+          startVideoTimeWatcher((time) => {
+            if (time >= videoPlayer.duration - 0.1 || videoPlayer.ended) {
+              stopVideoTimeWatcher();
+              closeWidget();
+            }
+          });
         } catch(e) {
           console.warn("Video blocked, closing in 5s", e);
           setTimeout(closeWidget, 5000);
@@ -282,7 +331,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     ipcRenderer.on('init-widget', async (event, payload) => {
       reminderId = payload.reminderId || 'default';
       settings = payload.settings;
-      hasVideos = payload.hasVideos;
+      hasCombinedVideo = !!payload.hasCombinedVideo;
+      dividePoint1 = payload.dividePoint1 || 0.0;
+      dividePoint2 = payload.dividePoint2 || 0.0;
       
       document.documentElement.style.setProperty('--widget-scale', settings.scale);
       mascotInstance = Mascot.mount('widget-fallback-container', 'idle');
@@ -317,7 +368,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       const payload = JSON.parse(rawPayload);
       reminderId = payload.reminderId || 'default';
       settings = payload.settings;
-      hasVideos = payload.hasVideos;
+      hasCombinedVideo = !!payload.hasCombinedVideo;
+      dividePoint1 = payload.dividePoint1 || 0.0;
+      dividePoint2 = payload.dividePoint2 || 0.0;
     } catch(e) {
       console.error("Payload decoding failed:", e);
       window.close();

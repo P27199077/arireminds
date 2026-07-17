@@ -309,57 +309,55 @@
                 <div class="form-group full-width" style="border-top: 1px solid var(--border-glass); padding-top: 1.25rem; margin-top: 0.5rem;">
                   <h4 style="color: var(--secondary);">Mascot Video Sequencer Assets (Optional)</h4>
                   <p style="color:var(--text-muted); font-size:0.75rem; margin-top:4px;">
-                    Upload custom clips for this specific reminder. Leave empty to use the hand-animated fallback mascot.
+                    Upload a single combined mascot video, and set dividing time keyframes to slice it into Walk-In, Action Loop, and Walk-Out segments. Leave empty to use the fallback mascot.
                   </p>
                 </div>
 
                 <!-- Upload Grid -->
                 <div class="form-group full-width">
-                  <div class="upload-drawer-grid">
+                  <div class="upload-drawer-grid" style="grid-template-columns: 1fr;">
                     
-                    <!-- Slot 1: Walk-In -->
-                    <div class="upload-drawer-card">
-                      <div class="upload-zone" id="zone-walk-in" data-slot="walk-in">
-                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                        <div class="upload-label" style="font-size:0.8rem;">1. Mascot Walk-In</div>
-                        <input type="file" class="file-input" accept="video/mp4, video/webm">
-                        <div class="upload-preview-container">
-                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
-                          <video class="preview-video" muted loop playsinline></video>
-                          <span class="video-label-tag">Walk In</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Slot 2: Action -->
-                    <div class="upload-drawer-card">
-                      <div class="upload-zone" id="zone-action" data-slot="action">
-                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                        <div class="upload-label" style="font-size:0.8rem;">2. Question Action</div>
-                        <input type="file" class="file-input" accept="video/mp4, video/webm">
-                        <div class="upload-preview-container">
-                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
-                          <video class="preview-video" muted loop playsinline></video>
-                          <span class="video-label-tag">Question</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Slot 3: Walk-Out -->
-                    <div class="upload-drawer-card">
-                      <div class="upload-zone" id="zone-walk-out" data-slot="walk-out">
-                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                        <div class="upload-label" style="font-size:0.8rem;">3. Mascot Walk-Out</div>
-                        <input type="file" class="file-input" accept="video/mp4, video/webm">
-                        <div class="upload-preview-container">
-                          <button type="button" class="btn-remove-video" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
-                          <video class="preview-video" muted loop playsinline></video>
-                          <span class="video-label-tag">Walk Out</span>
+                    <!-- Unified Slot: Combined Video -->
+                    <div class="upload-drawer-card" style="width: 100%;">
+                      <div class="upload-zone" id="zone-combined" data-slot="combined" style="height: 180px; flex-direction: column;">
+                        <i class="fa-solid fa-file-video upload-icon" style="font-size: 2.5rem; color: var(--primary);"></i>
+                        <div class="upload-label" style="font-size:0.9rem; margin-top: 8px;">Upload Single Combined Video (.mp4)</div>
+                        <input type="file" id="cfg-combined-video" class="file-input" accept="video/mp4, video/webm">
+                        <div class="upload-preview-container" id="trimmer-preview-container">
+                          <button type="button" class="btn-remove-video" id="btn-remove-combined" title="Remove video"><i class="fa-solid fa-xmark"></i></button>
+                          <video class="preview-video" id="trimmer-video" controls muted playsinline style="max-height: 150px; width: auto; max-width: 100%; border-radius: var(--border-radius-sm);"></video>
                         </div>
                       </div>
                     </div>
 
                   </div>
+                </div>
+
+                <!-- Keyframe Divide Points Setting -->
+                <div class="form-group full-width" style="margin-top: 0.5rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted);">1. Walk-In End Time (seconds)</label>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" id="cfg-divide-1" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 8px; font-family: monospace;">
+                        <button type="button" id="btn-set-divide-1" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current video time">
+                          <i class="fa-solid fa-clock"></i> Set Current
+                        </button>
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted);">2. Action Loop End Time (seconds)</label>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" id="cfg-divide-2" class="form-input-text" step="0.1" min="0" value="0.0" style="padding: 8px; font-family: monospace;">
+                        <button type="button" id="btn-set-divide-2" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.75rem; border-color: rgba(157, 78, 221, 0.3);" title="Use current video time">
+                          <i class="fa-solid fa-clock"></i> Set Current
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 8px; line-height: 1.3;">
+                    ℹ️ **How it works:** Walk-In runs from `0.0s` to `Divide 1`. The loop runs between `Divide 1` and `Divide 2` until you answer. Walk-Out runs from `Divide 2` to the end of the video.
+                  </p>
                 </div>
 
               </div>

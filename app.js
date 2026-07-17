@@ -219,11 +219,9 @@ function loadReminders() {
           success: "Oh that's good. I'm proud of you! Keep up the amazing work! 🥰",
           defer: "Okay, I'll come back to remind you again later. You can do it! 💪"
         },
-        hasVideos: {
-          'walk-in': false,
-          'action': false,
-          'walk-out': false
-        }
+        hasCombinedVideo: false,
+        dividePoint1: 0.0,
+        dividePoint2: 0.0
       }
     ];
     saveReminders();
@@ -255,12 +253,9 @@ function renderReminders() {
     card.className = `glass-card reminder-card ${reminder.enabled ? '' : 'disabled'}`;
     
     // Video status icons
-    const videoCount = Object.values(reminder.hasVideos || {}).filter(Boolean).length;
-    const videoLabel = videoCount === 3 
-      ? '<span style="color:var(--secondary); font-size:0.75rem;"><i class="fa-solid fa-video"></i> Custom Videos</span>'
-      : videoCount > 0
-        ? `<span style="color:var(--primary); font-size:0.75rem;"><i class="fa-solid fa-circle-play"></i> Hybrid (${videoCount}/3)</span>`
-        : '<span style="color:var(--success); font-size:0.75rem;"><i class="fa-solid fa-bezier-curve"></i> Fallback SVG</span>';
+    const videoLabel = reminder.hasCombinedVideo 
+      ? '<span style="color:var(--secondary); font-size:0.75rem;"><i class="fa-solid fa-video"></i> Keyframe Video</span>'
+      : '<span style="color:var(--success); font-size:0.75rem;"><i class="fa-solid fa-bezier-curve"></i> Fallback SVG</span>';
 
     // Repeat schedule label tag
     const repeat = reminder.repeat || { type: 'none' };
@@ -414,6 +409,10 @@ async function openConfigDrawer(reminderId = null) {
       document.getElementById('lbl-custom-coords').textContent = 'Coordinates: X: Not Configured, Y: Not Configured';
     }
 
+    // Load keyframe divide values
+    document.getElementById('cfg-divide-1').value = reminder.dividePoint1 !== undefined ? reminder.dividePoint1 : 0.0;
+    document.getElementById('cfg-divide-2').value = reminder.dividePoint2 !== undefined ? reminder.dividePoint2 : 0.0;
+
     // Load Repeat values
     const repeat = reminder.repeat || { type: 'none', additionalTimes: [], intervalValue: 1, intervalUnit: 'hours' };
     document.getElementById('cfg-reminder-repeat-type').value = repeat.type;
@@ -465,11 +464,9 @@ async function openConfigDrawer(reminderId = null) {
         success: "Oh that's good. I'm proud of you! Keep up the amazing work! 🥰",
         defer: "Okay, I'll come back to remind you again later. You can do it! 💪"
       },
-      hasVideos: {
-        'walk-in': false,
-        'action': false,
-        'walk-out': false
-      }
+      hasCombinedVideo: false,
+      dividePoint1: 0.0,
+      dividePoint2: 0.0
     };
     
     titleLabel.textContent = "Create Reminder Profile";
@@ -477,6 +474,10 @@ async function openConfigDrawer(reminderId = null) {
     document.getElementById('cfg-reminder-time').value = '12:00';
     document.getElementById('cfg-popup-scale').value = 1.0;
     document.getElementById('val-popup-scale').textContent = '1.0x';
+    
+    // Clear divide fields
+    document.getElementById('cfg-divide-1').value = 0.0;
+    document.getElementById('cfg-divide-2').value = 0.0;
     
     // Clear repeat settings
     document.getElementById('cfg-reminder-repeat-type').value = 'none';
@@ -517,26 +518,23 @@ function closeConfigDrawer() {
 }
 
 async function refreshDrawerVideoPreviews(reminderId) {
-  const slots = ['walk-in', 'action', 'walk-out'];
-  for (const slot of slots) {
-    const zone = document.querySelector(`.upload-zone[data-slot="${slot}"]`);
-    const previewContainer = zone.querySelector('.upload-preview-container');
-    const videoEl = previewContainer.querySelector('.preview-video');
-    
-    // Revoke old URL if any
-    if (videoEl.src) {
-      URL.revokeObjectURL(videoEl.src);
-      videoEl.src = '';
-    }
-    
-    const blob = await getVideoBlob(`${reminderId}_${slot}`);
-    if (blob) {
-      const url = URL.createObjectURL(blob);
-      videoEl.src = url;
-      previewContainer.classList.add('has-video');
-    } else {
-      previewContainer.classList.remove('has-video');
-    }
+  const zone = document.getElementById('zone-combined');
+  const previewContainer = document.getElementById('trimmer-preview-container');
+  const videoEl = document.getElementById('trimmer-video');
+  
+  // Revoke old URL if any
+  if (videoEl.src) {
+    URL.revokeObjectURL(videoEl.src);
+    videoEl.src = '';
+  }
+  
+  const blob = await getVideoBlob(`${reminderId}_combined`);
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    videoEl.src = url;
+    previewContainer.classList.add('has-video');
+  } else {
+    previewContainer.classList.remove('has-video');
   }
 }
 
@@ -557,6 +555,20 @@ function handleProfileFormSubmit(e) {
     defer: document.getElementById('cfg-text-defer').value
   };
   
+  const dividePoint1 = parseFloat(document.getElementById('cfg-divide-1').value) || 0.0;
+  const dividePoint2 = parseFloat(document.getElementById('cfg-divide-2').value) || 0.0;
+  
+  if (state.editingReminder && state.editingReminder.hasCombinedVideo) {
+    if (dividePoint1 < 0) {
+      alert("Divide Point 1 (Walk-In end) must be greater than or equal to 0 seconds!");
+      return;
+    }
+    if (dividePoint2 <= dividePoint1) {
+      alert("Divide Point 2 (Action Loop end) must be greater than Divide Point 1!");
+      return;
+    }
+  }
+
   // Extract repeat settings
   const repeatType = document.getElementById('cfg-reminder-repeat-type').value;
   const repeat = {
@@ -590,6 +602,9 @@ function handleProfileFormSubmit(e) {
     existing.repeat = repeat;
     existing.customX = state.editingReminder.customX;
     existing.customY = state.editingReminder.customY;
+    existing.hasCombinedVideo = state.editingReminder.hasCombinedVideo;
+    existing.dividePoint1 = dividePoint1;
+    existing.dividePoint2 = dividePoint2;
   } else {
     // Create new
     state.editingReminder.title = title;
@@ -598,6 +613,8 @@ function handleProfileFormSubmit(e) {
     state.editingReminder.scale = scale;
     state.editingReminder.texts = texts;
     state.editingReminder.repeat = repeat;
+    state.editingReminder.dividePoint1 = dividePoint1;
+    state.editingReminder.dividePoint2 = dividePoint2;
     state.reminders.push(state.editingReminder);
   }
   
@@ -994,36 +1011,87 @@ function runLocalSimulation(reminder) {
 // DRAG & DROP & UPLOAD SETUP INSIDE DRAWER
 // ----------------------------------------------------
 function setupVideoUploadZones() {
-  const zones = document.querySelectorAll('.upload-zone');
-  
-  zones.forEach(zone => {
-    const slot = zone.dataset.slot;
-    const fileInput = zone.querySelector('.file-input');
-    const removeBtn = zone.querySelector('.btn-remove-video');
-    
-    zone.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-remove-video')) return;
-      fileInput.click();
-    });
-    
-    fileInput.addEventListener('change', async () => {
-      if (fileInput.files.length > 0 && state.editingReminder) {
-        const file = fileInput.files[0];
+  const zone = document.getElementById('zone-combined');
+  if (!zone) return;
+
+  const fileInput = document.getElementById('cfg-combined-video');
+  const removeBtn = document.getElementById('btn-remove-combined');
+  const previewContainer = document.getElementById('trimmer-preview-container');
+  const videoEl = document.getElementById('trimmer-video');
+
+  zone.addEventListener('click', (e) => {
+    if (e.target.closest('.btn-remove-video') || e.target.closest('video')) return;
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async () => {
+    if (fileInput.files.length > 0 && state.editingReminder) {
+      const file = fileInput.files[0];
+      
+      if (file.size > 50 * 1024 * 1024) {
+        alert("File size exceeds 50MB! Please compress the video first.");
+        fileInput.value = '';
+        return;
+      }
+      
+      try {
+        const key = `${state.editingReminder.id}_combined`;
+        await saveVideoBlob(key, file);
+        state.editingReminder.hasCombinedVideo = true;
         
+        // Display Preview
+        if (videoEl.src) URL.revokeObjectURL(videoEl.src);
+        videoEl.src = URL.createObjectURL(file);
+        previewContainer.classList.add('has-video');
+        
+        showNotification('Uploaded', `${file.name} saved.`);
+      } catch(e) {
+        console.error("IndexedDB Save Error:", e);
+        alert("Could not store video. quota limits exceeded.");
+      }
+    }
+  });
+
+  removeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (state.editingReminder) {
+      const key = `${state.editingReminder.id}_combined`;
+      await deleteVideoBlob(key);
+      state.editingReminder.hasCombinedVideo = false;
+      
+      if (videoEl.src) {
+        URL.revokeObjectURL(videoEl.src);
+        videoEl.src = '';
+      }
+      previewContainer.classList.remove('has-video');
+      showNotification('Removed', 'Combined video cleared.');
+    }
+  });
+
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+
+  zone.addEventListener('dragleave', () => {
+    zone.classList.remove('dragover');
+  });
+
+  zone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    
+    if (e.dataTransfer.files.length > 0 && state.editingReminder) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('video/')) {
         if (file.size > 50 * 1024 * 1024) {
-          alert("File size exceeds 50MB! Please compress the video or choose a shorter clip.");
-          fileInput.value = '';
+          alert("File size exceeds 50MB!");
           return;
         }
-        
         try {
-          const key = `${state.editingReminder.id}_${slot}`;
+          const key = `${state.editingReminder.id}_combined`;
           await saveVideoBlob(key, file);
-          state.editingReminder.hasVideos[slot] = true;
-          
-          // Display Preview
-          const previewContainer = zone.querySelector('.upload-preview-container');
-          const videoEl = previewContainer.querySelector('.preview-video');
+          state.editingReminder.hasCombinedVideo = true;
           
           if (videoEl.src) URL.revokeObjectURL(videoEl.src);
           videoEl.src = URL.createObjectURL(file);
@@ -1032,67 +1100,9 @@ function setupVideoUploadZones() {
           showNotification('Uploaded', `${file.name} saved.`);
         } catch(e) {
           console.error("IndexedDB Save Error:", e);
-          alert("Could not store video. quota limits exceeded.");
         }
       }
-    });
-    
-    removeBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (state.editingReminder) {
-        const key = `${state.editingReminder.id}_${slot}`;
-        await deleteVideoBlob(key);
-        state.editingReminder.hasVideos[slot] = false;
-        
-        const previewContainer = zone.querySelector('.upload-preview-container');
-        const videoEl = previewContainer.querySelector('.preview-video');
-        if (videoEl.src) {
-          URL.revokeObjectURL(videoEl.src);
-          videoEl.src = '';
-        }
-        previewContainer.classList.remove('has-video');
-        showNotification('Removed', 'Video slot cleared.');
-      }
-    });
-    
-    zone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      zone.classList.add('dragover');
-    });
-    
-    zone.addEventListener('dragleave', () => {
-      zone.classList.remove('dragover');
-    });
-    
-    zone.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      zone.classList.remove('dragover');
-      
-      if (e.dataTransfer.files.length > 0 && state.editingReminder) {
-        const file = e.dataTransfer.files[0];
-        if (file.type.startsWith('video/')) {
-          if (file.size > 50 * 1024 * 1024) {
-            alert("File size exceeds 50MB!");
-            return;
-          }
-          try {
-            const key = `${state.editingReminder.id}_${slot}`;
-            await saveVideoBlob(key, file);
-            state.editingReminder.hasVideos[slot] = true;
-            
-            const previewContainer = zone.querySelector('.upload-preview-container');
-            const videoEl = previewContainer.querySelector('.preview-video');
-            if (videoEl.src) URL.revokeObjectURL(videoEl.src);
-            videoEl.src = URL.createObjectURL(file);
-            previewContainer.classList.add('has-video');
-            
-            showNotification('Uploaded', `${file.name} saved.`);
-          } catch(e) {
-            console.error("IndexedDB Save Error:", e);
-          }
-        }
-      }
-    });
+    }
   });
 }
 
@@ -1211,11 +1221,9 @@ window.addEventListener('DOMContentLoaded', async () => {
           customY: state.editingReminder.customY,
           texts: state.editingReminder.texts
         },
-        hasVideos: {
-          'walk-in': !!state.editingReminder.hasVideos['walk-in'],
-          'action': !!state.editingReminder.hasVideos['action'],
-          'walk-out': !!state.editingReminder.hasVideos['walk-out']
-        }
+        hasCombinedVideo: !!state.editingReminder.hasCombinedVideo,
+        dividePoint1: state.editingReminder.dividePoint1 || 0.0,
+        dividePoint2: state.editingReminder.dividePoint2 || 0.0
       };
       ipcRenderer.send('trigger-widget-positioner', payload);
     } else {
@@ -1254,6 +1262,25 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Bind Set Current Divide points capture
+  document.getElementById('btn-set-divide-1').addEventListener('click', () => {
+    const video = document.getElementById('trimmer-video');
+    if (video && video.src) {
+      document.getElementById('cfg-divide-1').value = video.currentTime.toFixed(1);
+    } else {
+      alert("Please upload and play a combined video first to capture its current time!");
+    }
+  });
+
+  document.getElementById('btn-set-divide-2').addEventListener('click', () => {
+    const video = document.getElementById('trimmer-video');
+    if (video && video.src) {
+      document.getElementById('cfg-divide-2').value = video.currentTime.toFixed(1);
+    } else {
+      alert("Please upload and play a combined video first to capture its current time!");
+    }
+  });
 });
 
 // Helper function to complete all daily goals
