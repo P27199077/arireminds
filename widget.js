@@ -121,6 +121,18 @@ async function setWidgetState(stateName) {
     videoPlayer.pause();
   }
   
+  // Parse and calculate divide points cleanly
+  const dur = (videoPlayer && !isNaN(videoPlayer.duration) && videoPlayer.duration > 0) ? videoPlayer.duration : 0.0;
+  let d1 = parseFloat(dividePoint1);
+  let d2 = parseFloat(dividePoint2);
+  if (isNaN(d1) || d1 < 0) d1 = 0.0;
+  if (isNaN(d2) || d2 <= d1) d2 = 0.0;
+
+  if (d2 <= d1 && dur > 0) {
+    d1 = dur * 0.33;
+    d2 = dur * 0.66;
+  }
+  
   switch(stateName) {
     case 'walkin':
       bubble.className = 'speech-bubble';
@@ -134,8 +146,10 @@ async function setWidgetState(stateName) {
         try {
           await videoPlayer.play();
           startVideoTimeWatcher((player) => {
+            if (activeState !== 'walkin') return;
             if (player.seeking) return;
-            if (player.currentTime >= dividePoint1) {
+            const currentD1 = (d2 > d1) ? d1 : ((player.duration || 0) * 0.33);
+            if (currentD1 > 0 && player.currentTime >= currentD1) {
               stopVideoTimeWatcher();
               setWidgetState('ask');
             }
@@ -165,9 +179,12 @@ async function setWidgetState(stateName) {
       if (useVideo) {
         videoPlayer.loop = false;
         
-        // Only seek to dividePoint1 if the video is not already near it
-        if (Math.abs(videoPlayer.currentTime - dividePoint1) > 0.4) {
-          videoPlayer.currentTime = dividePoint1;
+        const effectiveD1 = (d2 > d1) ? d1 : ((videoPlayer.duration || 0) * 0.33);
+        const effectiveD2 = (d2 > d1) ? d2 : ((videoPlayer.duration || 0) * 0.66);
+
+        // Seek to start of action loop if not in action range
+        if (videoPlayer.currentTime < effectiveD1 || videoPlayer.currentTime >= effectiveD2) {
+          videoPlayer.currentTime = effectiveD1;
         }
         
         try {
@@ -177,10 +194,12 @@ async function setWidgetState(stateName) {
           
           let isLoopResetting = false;
           startVideoTimeWatcher((player) => {
+            if (activeState !== 'ask') return;
             if (player.seeking || isLoopResetting) return;
-            if (dividePoint2 > dividePoint1 && player.currentTime >= dividePoint2) {
+
+            if (effectiveD2 > effectiveD1 && player.currentTime >= effectiveD2) {
               isLoopResetting = true;
-              player.currentTime = dividePoint1;
+              player.currentTime = effectiveD1;
               player.play().then(() => {
                 isLoopResetting = false;
               }).catch(() => {
@@ -211,14 +230,18 @@ async function setWidgetState(stateName) {
       
       if (useVideo) {
         videoPlayer.loop = false;
-        videoPlayer.currentTime = dividePoint2;
+        const effectiveD2 = (d2 > d1) ? d2 : ((videoPlayer.duration || 0) * 0.66);
+        
+        videoPlayer.pause();
+        videoPlayer.currentTime = effectiveD2;
         
         try {
           await videoPlayer.play();
           startVideoTimeWatcher((player) => {
+            if (activeState !== 'happy') return;
             if (player.seeking) return;
-            const dur = player.duration;
-            if ((dur && player.currentTime >= dur - 0.25) || player.ended) {
+            const playerDur = player.duration;
+            if ((playerDur && player.currentTime >= playerDur - 0.2) || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
             } else if (player.paused && activeState === 'happy') {
@@ -241,14 +264,18 @@ async function setWidgetState(stateName) {
       
       if (useVideo) {
         videoPlayer.loop = false;
-        videoPlayer.currentTime = dividePoint2;
+        const effectiveD2 = (d2 > d1) ? d2 : ((videoPlayer.duration || 0) * 0.66);
+        
+        videoPlayer.pause();
+        videoPlayer.currentTime = effectiveD2;
         
         try {
           await videoPlayer.play();
           startVideoTimeWatcher((player) => {
+            if (activeState !== 'sad') return;
             if (player.seeking) return;
-            const dur = player.duration;
-            if ((dur && player.currentTime >= dur - 0.25) || player.ended) {
+            const playerDur = player.duration;
+            if ((playerDur && player.currentTime >= playerDur - 0.2) || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
             } else if (player.paused && activeState === 'sad') {
@@ -347,8 +374,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       reminderId = payload.reminderId || 'default';
       settings = payload.settings;
       hasCombinedVideo = !!payload.hasCombinedVideo;
-      dividePoint1 = payload.dividePoint1 || 0.0;
-      dividePoint2 = payload.dividePoint2 || 0.0;
+      dividePoint1 = parseFloat(payload.dividePoint1) || 0.0;
+      dividePoint2 = parseFloat(payload.dividePoint2) || 0.0;
       
       document.documentElement.style.setProperty('--widget-scale', settings.scale);
       mascotInstance = Mascot.mount('widget-fallback-container', 'idle');
@@ -363,7 +390,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Populate slider
         positionerSlider.value = settings.scale || 1.0;
         positionerScaleVal.textContent = parseFloat(positionerSlider.value).toFixed(1) + 'x';
-        document.documentElement.style.setProperty('--widget-scale', positionerSlider.value);
+        document.documentElement.style.setProperty('--widget-scale', settings.scale);
         
         setWidgetState('ask');
       } else {
@@ -384,8 +411,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       reminderId = payload.reminderId || 'default';
       settings = payload.settings;
       hasCombinedVideo = !!payload.hasCombinedVideo;
-      dividePoint1 = payload.dividePoint1 || 0.0;
-      dividePoint2 = payload.dividePoint2 || 0.0;
+      dividePoint1 = parseFloat(payload.dividePoint1) || 0.0;
+      dividePoint2 = parseFloat(payload.dividePoint2) || 0.0;
     } catch(e) {
       console.error("Payload decoding failed:", e);
       window.close();
