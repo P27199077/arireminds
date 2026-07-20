@@ -24,21 +24,78 @@
         </button>
       </div>
       <div class="speech-actions" id="positioner-actions" style="display: none; flex-direction: column; gap: 8px; width: 100%;">
-        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; border-top: 1px solid var(--border-glass); padding-top: 8px; width: 100%;">
+        <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border-glass); padding-top: 6px; width: 100%;">
           <label style="font-size: 0.75rem; color: var(--text-muted); text-align: left; display: block; width: 100%;">Mascot Scale</label>
           <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-            <input type="range" id="positioner-scale-slider" min="0.6" max="1.5" step="0.1" value="1.0" style="flex-grow: 1; cursor: pointer; accent-color: var(--primary);">
+            <input type="range" id="positioner-scale-slider" min="0.5" max="3.5" step="0.1" value="1.0" style="flex-grow: 1; cursor: pointer; accent-color: var(--primary);">
             <span id="positioner-scale-val" style="font-size: 0.75rem; min-width: 28px; font-family: monospace;">1.0x</span>
           </div>
         </div>
-        <button class="btn-action btn-yes" id="btn-save-position" style="width: 100%; justify-content: center; border: none; padding: 8px;">
-          <i class="fa-solid fa-floppy-disk"></i> Save Position & Scale
+
+        <!-- Video Crop Sliders -->
+        <div id="crop-controls-container" style="display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed rgba(255, 255, 255, 0.15); padding-top: 6px; width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <label style="font-size: 0.72rem; color: var(--secondary); font-weight: 600; text-align: left;"><i class="fa-solid fa-crop"></i> Video Edge Crop</label>
+            <button type="button" id="btn-reset-crop" style="background: none; border: none; color: var(--text-muted); font-size: 0.65rem; cursor: pointer; text-decoration: underline;">Reset</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; font-size: 0.68rem;">
+            <div>
+              <span style="color: var(--text-muted);">Top:</span> <span id="crop-top-val">0%</span>
+              <input type="range" id="crop-top-slider" min="0" max="40" step="1" value="0" style="width: 100%; height: 4px; accent-color: var(--secondary);">
+            </div>
+            <div>
+              <span style="color: var(--text-muted);">Bottom:</span> <span id="crop-bottom-val">0%</span>
+              <input type="range" id="crop-bottom-slider" min="0" max="40" step="1" value="0" style="width: 100%; height: 4px; accent-color: var(--secondary);">
+            </div>
+            <div>
+              <span style="color: var(--text-muted);">Left:</span> <span id="crop-left-val">0%</span>
+              <input type="range" id="crop-left-slider" min="0" max="40" step="1" value="0" style="width: 100%; height: 4px; accent-color: var(--secondary);">
+            </div>
+            <div>
+              <span style="color: var(--text-muted);">Right:</span> <span id="crop-right-val">0%</span>
+              <input type="range" id="crop-right-slider" min="0" max="40" step="1" value="0" style="width: 100%; height: 4px; accent-color: var(--secondary);">
+            </div>
+          </div>
+        </div>
+
+        <!-- Speech Bubble Placement & Text Scaling -->
+        <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.15); padding-top: 6px; width: 100%;">
+          <label style="font-size: 0.72rem; color: #00f0ff; font-weight: 600; text-align: left;"><i class="fa-solid fa-comment"></i> Text Placement & Scale</label>
+          
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%;">
+            <button type="button" class="btn-pos-opt active" data-pos="top" style="padding: 4px; font-size: 0.65rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Top</button>
+            <button type="button" class="btn-pos-opt" data-pos="bottom" style="padding: 4px; font-size: 0.65rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Bottom</button>
+            <button type="button" class="btn-pos-opt" data-pos="left" style="padding: 4px; font-size: 0.65rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Left</button>
+            <button type="button" class="btn-pos-opt" data-pos="right" style="padding: 4px; font-size: 0.65rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; cursor: pointer;">Right</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px;">
+            <span style="font-size: 0.68rem; color: var(--text-muted);">Text Size:</span>
+            <input type="range" id="text-scale-slider" min="0.7" max="2.0" step="0.1" value="1.0" style="flex-grow: 1; cursor: pointer; accent-color: #00f0ff;">
+            <span id="text-scale-val" style="font-size: 0.68rem; font-family: monospace;">1.0x</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px;">
+            <span style="font-size: 0.68rem; color: var(--text-muted);">Vertical Gap:</span>
+            <input type="range" id="bubble-gap-slider" min="-40" max="120" step="4" value="8" style="flex-grow: 1; cursor: pointer; accent-color: #00f0ff;">
+            <span id="bubble-gap-val" style="font-size: 0.68rem; font-family: monospace;">8px</span>
+          </div>
+        </div>
+
+        <button class="btn-action btn-yes" id="btn-save-position" style="width: 100%; justify-content: center; border: none; padding: 8px; margin-top: 4px;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Position, Scale & Crop
         </button>
       </div>
     </div>
 
     <!-- Mascot Wrapper -->
     <div class="mascot-wrapper">
+      <!-- 4 Corner Resize Handles (Active in Positioner Mode) -->
+      <div class="resize-handle top-left" data-corner="top-left" title="Drag corner to scale size"></div>
+      <div class="resize-handle top-right" data-corner="top-right" title="Drag corner to scale size"></div>
+      <div class="resize-handle bottom-left" data-corner="bottom-left" title="Drag corner to scale size"></div>
+      <div class="resize-handle bottom-right" data-corner="bottom-right" title="Drag corner to scale size"></div>
+
       <!-- 1. Video Player Container -->
       <video id="widget-video" class="mascot-video" muted playsinline></video>
 

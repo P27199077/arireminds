@@ -545,7 +545,12 @@ function handleProfileFormSubmit(e) {
   const id = document.getElementById('cfg-reminder-id').value;
   const title = document.getElementById('cfg-reminder-title').value.trim();
   const time = document.getElementById('cfg-reminder-time').value;
-  const screenPosition = document.getElementById('cfg-screen-position').value;
+  let screenPosition = document.getElementById('cfg-screen-position').value;
+  if (state.editingReminder && state.editingReminder.customX !== undefined && state.editingReminder.customY !== undefined) {
+    if (screenPosition === 'bottom-right') {
+      screenPosition = 'custom';
+    }
+  }
   const scale = parseFloat(document.getElementById('cfg-popup-scale').value);
   
   const texts = {
@@ -555,19 +560,11 @@ function handleProfileFormSubmit(e) {
     defer: document.getElementById('cfg-text-defer').value
   };
   
-  const dividePoint1 = parseFloat(document.getElementById('cfg-divide-1').value) || 0.0;
-  const dividePoint2 = parseFloat(document.getElementById('cfg-divide-2').value) || 0.0;
+  let dividePoint1 = parseFloat(document.getElementById('cfg-divide-1').value);
+  let dividePoint2 = parseFloat(document.getElementById('cfg-divide-2').value);
   
-  if (state.editingReminder && state.editingReminder.hasCombinedVideo) {
-    if (dividePoint1 < 0) {
-      alert("Divide Point 1 (Walk-In end) must be greater than or equal to 0 seconds!");
-      return;
-    }
-    if (dividePoint2 <= dividePoint1) {
-      alert("Divide Point 2 (Action Loop end) must be greater than Divide Point 1!");
-      return;
-    }
-  }
+  if (isNaN(dividePoint1) || dividePoint1 < 0) dividePoint1 = 0.0;
+  if (isNaN(dividePoint2) || dividePoint2 <= dividePoint1) dividePoint2 = 0.0;
 
   // Extract repeat settings
   const repeatType = document.getElementById('cfg-reminder-repeat-type').value;
@@ -602,6 +599,7 @@ function handleProfileFormSubmit(e) {
     existing.repeat = repeat;
     existing.customX = state.editingReminder.customX;
     existing.customY = state.editingReminder.customY;
+    existing.crop = state.editingReminder.crop || { top: 0, bottom: 0, left: 0, right: 0 };
     existing.hasCombinedVideo = state.editingReminder.hasCombinedVideo;
     existing.dividePoint1 = dividePoint1;
     existing.dividePoint2 = dividePoint2;
@@ -867,7 +865,11 @@ async function triggerWidgetWindow(reminder) {
       scale: reminder.scale,
       texts: reminder.texts,
       customX: reminder.customX,
-      customY: reminder.customY
+      customY: reminder.customY,
+      crop: reminder.crop || { top: 0, bottom: 0, left: 0, right: 0 },
+      bubblePosition: reminder.bubblePosition || 'top',
+      textScale: reminder.textScale || 1.0,
+      bubbleGap: reminder.bubbleGap !== undefined ? reminder.bubbleGap : 8
     },
     hasCombinedVideo: !!reminder.hasCombinedVideo,
     dividePoint1: reminder.dividePoint1 || 0.0,
@@ -1362,13 +1364,43 @@ window.addEventListener('DOMContentLoaded', async () => {
         state.editingReminder.customX = arg.x;
         state.editingReminder.customY = arg.y;
         state.editingReminder.scale = arg.scale;
+        state.editingReminder.screenPosition = 'custom';
+        if (arg.crop) {
+          state.editingReminder.crop = arg.crop;
+        }
+        if (arg.bubblePosition) {
+          state.editingReminder.bubblePosition = arg.bubblePosition;
+        }
+        if (arg.textScale) {
+          state.editingReminder.textScale = arg.textScale;
+        }
+        if (arg.bubbleGap !== undefined) {
+          state.editingReminder.bubbleGap = arg.bubbleGap;
+        }
         
         // Update the drawer inputs in real-time
+        document.getElementById('cfg-screen-position').value = 'custom';
+        document.getElementById('custom-position-setup-grp').style.display = 'block';
         document.getElementById('cfg-popup-scale').value = arg.scale;
         document.getElementById('val-popup-scale').textContent = arg.scale.toFixed(1) + 'x';
         document.getElementById('lbl-custom-coords').textContent = `Coordinates: X: ${arg.x}, Y: ${arg.y}`;
         
-        showNotification('Position Saved', `Ari Reminds will now open at coordinates X: ${arg.x}, Y: ${arg.y} with a ${arg.scale.toFixed(1)}x character scale!`);
+        // Find existing reminder in state.reminders and persist automatically!
+        const idx = state.reminders.findIndex(r => r.id === state.editingReminder.id);
+        if (idx !== -1) {
+          state.reminders[idx].customX = arg.x;
+          state.reminders[idx].customY = arg.y;
+          state.reminders[idx].scale = arg.scale;
+          state.reminders[idx].screenPosition = 'custom';
+          if (arg.crop) state.reminders[idx].crop = arg.crop;
+          if (arg.bubblePosition) state.reminders[idx].bubblePosition = arg.bubblePosition;
+          if (arg.textScale) state.reminders[idx].textScale = arg.textScale;
+          if (arg.bubbleGap !== undefined) state.reminders[idx].bubbleGap = arg.bubbleGap;
+        }
+        
+        saveReminders();
+        
+        showNotification('Position & Crop Saved', `Ari Reminds will now open at coordinates X: ${arg.x}, Y: ${arg.y} with a ${arg.scale.toFixed(1)}x scale and custom video crop!`);
       } else {
         console.warn("DASHBOARD RENDERER: WARNING - state.editingReminder was null when custom-position-saved triggered!");
       }

@@ -50,32 +50,36 @@ ipcMain.on('trigger-widget', (event, payload) => {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenW, height: screenH, x: screenX, y: screenY } = primaryDisplay.workArea;
 
-  // Window Dimension calculations based on scale
   const scale = payload.settings.scale || 1.0;
-  const widgetW = Math.round(360 * Math.max(1.0, scale));
-  const widgetH = Math.round(320 * Math.max(1.0, scale));
+  const widgetW = Math.max(480, Math.round(420 * Math.max(1.0, scale)));
+  const widgetH = Math.max(520, Math.round(440 * Math.max(1.0, scale)));
 
   // Position coordinates configurations
   let left = screenX + screenW - widgetW - 20;
   let top = screenY + screenH - widgetH - 20; // Default: Bottom Right
 
-  switch(payload.settings.screenPosition) {
-    case 'bottom-left':
-      left = screenX + 20;
-      top = screenY + screenH - widgetH - 20;
-      break;
-    case 'top-right':
-      left = screenX + screenW - widgetW - 20;
-      top = screenY + 20;
-      break;
-    case 'top-left':
-      left = screenX + 20;
-      top = screenY + 20;
-      break;
-    case 'custom':
-      left = payload.settings.customX !== undefined ? payload.settings.customX : (screenX + screenW - widgetW - 20);
-      top = payload.settings.customY !== undefined ? payload.settings.customY : (screenY + screenH - widgetH - 20);
-      break;
+  if (payload.settings.customX !== undefined && payload.settings.customY !== undefined) {
+    left = payload.settings.customX;
+    top = payload.settings.customY;
+  } else {
+    switch(payload.settings.screenPosition) {
+      case 'bottom-left':
+        left = screenX + 20;
+        top = screenY + screenH - widgetH - 20;
+        break;
+      case 'top-right':
+        left = screenX + screenW - widgetW - 20;
+        top = screenY + 20;
+        break;
+      case 'top-left':
+        left = screenX + 20;
+        top = screenY + 20;
+        break;
+      default:
+        left = screenX + screenW - widgetW - 20;
+        top = screenY + screenH - widgetH - 20;
+        break;
+    }
   }
 
   // Create native transparent frameless overlay
@@ -120,11 +124,12 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenW, height: screenH, x: screenX, y: screenY } = primaryDisplay.workArea;
 
-  const widgetW = 480;
-  const widgetH = 400;
+  const scale = (payload.settings && payload.settings.scale) ? payload.settings.scale : 1.0;
+  const widgetW = Math.max(460, Math.round(400 * Math.max(1.0, scale)));
+  const widgetH = Math.max(460, Math.round(400 * Math.max(1.0, scale)));
 
   let left = payload.settings.customX !== undefined ? payload.settings.customX : screenX + Math.round((screenW - widgetW) / 2);
-  let top = payload.settings.customY !== undefined ? payload.settings.customY : screenY + Math.round((screenH - widgetH) / 2);
+  let top = payload.settings.customY !== undefined ? payload.settings.customY : screenY + Math.round((screenH - widgetH) / 3);
 
   widgetWindow = new BrowserWindow({
     width: widgetW,
@@ -160,11 +165,19 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
 });
 
 ipcMain.on('save-custom-position', (event, arg) => {
-  console.log("MAIN PROCESS: save-custom-position received with scale:", arg.scale);
+  console.log("MAIN PROCESS: save-custom-position received with scale, crop, bubblePos, textScale:", arg);
   if (widgetWindow && dashboardWindow) {
     const [x, y] = widgetWindow.getPosition();
     console.log("MAIN PROCESS: Widget position is:", x, y, "Sending custom-position-saved to dashboard renderer");
-    dashboardWindow.webContents.send('custom-position-saved', { x, y, scale: arg.scale });
+    dashboardWindow.webContents.send('custom-position-saved', {
+      x,
+      y,
+      scale: arg.scale,
+      crop: arg.crop,
+      bubblePosition: arg.bubblePosition,
+      textScale: arg.textScale,
+      bubbleGap: arg.bubbleGap
+    });
     widgetWindow.close();
     widgetWindow = null;
   } else {

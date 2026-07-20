@@ -33,7 +33,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   padding: 12px;
   box-sizing: border-box;
@@ -42,6 +42,7 @@ body {
   /* Backdrop overlay gradient to blend with mascot styling */
   background: radial-gradient(circle at bottom center, rgba(157, 78, 221, 0.15) 0%, rgba(10, 8, 18, 0.92) 80%);
 }
+
 
 /* Speech Bubble styles */
 .speech-bubble {
@@ -145,22 +146,24 @@ body {
 
 /* Mascot Containers */
 .mascot-wrapper {
-  width: 140px;
-  height: 160px;
+  width: calc(140px * var(--widget-scale, 1.0) * var(--crop-width-ratio, 1.0));
+  height: calc(160px * var(--widget-scale, 1.0) * var(--crop-height-ratio, 1.0));
   position: relative;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  margin-bottom: 4px;
-  transform: scale(var(--widget-scale));
-  transform-origin: bottom center;
+  margin-bottom: var(--bubble-gap, 8px);
+  margin-top: var(--bubble-gap, 8px);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.1s ease, height 0.1s ease;
 }
 
 /* Video Player Layer */
 .mascot-video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  width: calc(100% / var(--crop-width-ratio, 1.0));
+  height: calc(100% / var(--crop-height-ratio, 1.0));
+  object-fit: cover;
   display: none; /* hidden if fallback is active */
   z-index: 10;
   pointer-events: none;
@@ -201,17 +204,178 @@ body.is-electron .widget-viewport {
   background: transparent !important;
 }
 
-/* Drag handle support for custom positioning mode */
-body.is-electron.is-positioner-mode {
-  cursor: move;
+/* Positioner Calibration Mode Styling */
+body.is-positioner-mode .mascot-wrapper {
+  cursor: grab;
+  pointer-events: auto !important;
+  border: 1.5px dashed rgba(255, 0, 127, 0.7);
+  border-radius: 12px;
+  box-shadow: inset 0 0 15px rgba(255, 0, 127, 0.2);
 }
-body.is-electron.is-positioner-mode .mascot-wrapper {
-  -webkit-app-region: drag;
+
+body.is-positioner-mode .mascot-wrapper:active {
+  cursor: grabbing;
 }
+
+body.is-electron.is-positioner-mode button,
 body.is-electron.is-positioner-mode .btn-action,
+body.is-electron.is-positioner-mode #btn-save-position,
+body.is-electron.is-positioner-mode #btn-reset-crop,
 body.is-electron.is-positioner-mode .speech-bubble,
+body.is-electron.is-positioner-mode .speech-actions,
+body.is-electron.is-positioner-mode #positioner-actions,
+body.is-electron.is-positioner-mode .resize-handle,
 body.is-electron.is-positioner-mode input[type="range"] {
-  -webkit-app-region: no-drag;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Corner Resize Handles Styling for Positioner Calibration Mode */
+.resize-handle {
+  display: none;
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--secondary);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--secondary), 0 0 14px rgba(255, 0, 127, 0.8);
+  z-index: 150;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+body.is-positioner-mode .resize-handle {
+  display: block;
+}
+
+body.is-positioner-mode .mascot-wrapper {
+  border: 1px dashed rgba(255, 0, 127, 0.6);
+  border-radius: 12px;
+  box-shadow: inset 0 0 15px rgba(255, 0, 127, 0.15);
+}
+
+.resize-handle:hover {
+  transform: scale(1.35);
+  background: var(--primary);
+}
+
+.resize-handle.top-left {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.resize-handle.top-right {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-left {
+  bottom: -7px;
+  left: -7px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-right {
+  bottom: -7px;
+  right: -7px;
+  cursor: nwse-resize;
+}
+
+/* Video Crop Clipping Support */
+.mascot-video {
+  /* Dynamic crop clip-path variables initialized by script */
+  clip-path: inset(var(--crop-top, 0%) var(--crop-right, 0%) var(--crop-bottom, 0%) var(--crop-left, 0%));
+  transition: clip-path 0.1s ease;
+}
+
+/* Speech Content and Action button scaling */
+.speech-content {
+  font-size: calc(0.88rem * var(--text-scale, 1.0));
+}
+.btn-action {
+  font-size: calc(0.78rem * var(--text-scale, 1.0));
+  padding: calc(8px * var(--text-scale, 1.0)) calc(12px * var(--text-scale, 1.0));
+}
+
+/* Layout Positioning Options for Speech Bubble */
+.widget-viewport.pos-top {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.widget-viewport.pos-bottom {
+  flex-direction: column-reverse;
+  justify-content: center;
+  align-items: center;
+}
+.widget-viewport.pos-left {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.widget-viewport.pos-right {
+  flex-direction: row-reverse;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Pointer Arrow Adjustments for Placement Options */
+.widget-viewport.pos-bottom .speech-bubble::after {
+  bottom: auto;
+  top: -8px;
+  border-width: 0 8px 8px;
+  border-color: transparent transparent var(--bg-dark);
+}
+.widget-viewport.pos-bottom .speech-bubble::before {
+  bottom: auto;
+  top: -11px;
+  border-width: 0 9px 9px;
+  border-color: transparent transparent var(--primary);
+}
+
+.widget-viewport.pos-left .speech-bubble::after {
+  bottom: auto;
+  top: 50%;
+  right: -8px;
+  left: auto;
+  transform: translateY(-50%);
+  border-width: 8px 0 8px 8px;
+  border-color: transparent transparent transparent var(--bg-dark);
+}
+.widget-viewport.pos-left .speech-bubble::before {
+  bottom: auto;
+  top: 50%;
+  right: -11px;
+  left: auto;
+  transform: translateY(-50%);
+  border-width: 9px 0 9px 9px;
+  border-color: transparent transparent transparent var(--primary);
+}
+
+.widget-viewport.pos-right .speech-bubble::after {
+  bottom: auto;
+  top: 50%;
+  left: -8px;
+  transform: translateY(-50%);
+  border-width: 8px 8px 8px 0;
+  border-color: transparent var(--bg-dark) transparent transparent;
+}
+.widget-viewport.pos-right .speech-bubble::before {
+  bottom: auto;
+  top: 50%;
+  left: -11px;
+  transform: translateY(-50%);
+  border-width: 9px 9px 9px 0;
+  border-color: transparent var(--primary) transparent transparent;
+}
+
+.btn-pos-opt.active {
+  background: var(--primary) !important;
+  border-color: var(--secondary) !important;
+  font-weight: bold;
 }
 
 
