@@ -217,17 +217,18 @@ async function setWidgetState(stateName) {
           await videoPlayer.play();
           startVideoTimeWatcher((player) => {
             if (player.seeking) return;
-            if (player.currentTime >= player.duration - 0.1 || player.ended) {
+            const dur = player.duration;
+            if ((dur && player.currentTime >= dur - 0.2) || player.ended || (player.paused && activeState === 'happy')) {
               stopVideoTimeWatcher();
               closeWidget();
             }
           });
         } catch(e) {
-          console.warn("Video blocked, closing in 5s", e);
-          setTimeout(closeWidget, 5000);
+          console.warn("Video blocked, closing in 3s", e);
+          setTimeout(closeWidget, 3000);
         }
       } else {
-        setTimeout(closeWidget, 5000);
+        setTimeout(closeWidget, 4000);
       }
       break;
       
@@ -244,17 +245,18 @@ async function setWidgetState(stateName) {
           await videoPlayer.play();
           startVideoTimeWatcher((player) => {
             if (player.seeking) return;
-            if (player.currentTime >= player.duration - 0.1 || player.ended) {
+            const dur = player.duration;
+            if ((dur && player.currentTime >= dur - 0.2) || player.ended || (player.paused && activeState === 'sad')) {
               stopVideoTimeWatcher();
               closeWidget();
             }
           });
         } catch(e) {
-          console.warn("Video blocked, closing in 5s", e);
-          setTimeout(closeWidget, 5000);
+          console.warn("Video blocked, closing in 3s", e);
+          setTimeout(closeWidget, 3000);
         }
       } else {
-        setTimeout(closeWidget, 5000);
+        setTimeout(closeWidget, 4000);
       }
       break;
   }
