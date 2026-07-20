@@ -218,9 +218,11 @@ async function setWidgetState(stateName) {
           startVideoTimeWatcher((player) => {
             if (player.seeking) return;
             const dur = player.duration;
-            if ((dur && player.currentTime >= dur - 0.2) || player.ended || (player.paused && activeState === 'happy')) {
+            if ((dur && player.currentTime >= dur - 0.25) || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
+            } else if (player.paused && activeState === 'happy') {
+              player.play().catch(() => {});
             }
           });
         } catch(e) {
@@ -246,9 +248,11 @@ async function setWidgetState(stateName) {
           startVideoTimeWatcher((player) => {
             if (player.seeking) return;
             const dur = player.duration;
-            if ((dur && player.currentTime >= dur - 0.2) || player.ended || (player.paused && activeState === 'sad')) {
+            if ((dur && player.currentTime >= dur - 0.25) || player.ended) {
               stopVideoTimeWatcher();
               closeWidget();
+            } else if (player.paused && activeState === 'sad') {
+              player.play().catch(() => {});
             }
           });
         } catch(e) {
