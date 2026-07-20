@@ -7,6 +7,8 @@
 
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
 
 let dashboardWindow = null;
 let widgetWindow = null;
@@ -190,6 +192,90 @@ ipcMain.on('close-widget', () => {
 ipcMain.on('tasks-completed', () => {
   if (dashboardWindow && !dashboardWindow.isDestroyed()) {
     dashboardWindow.webContents.send('sync-tasks-completed');
+  }
+});
+
+// Background Removal Automation Engine IPC
+ipcMain.on('remove-video-bg', async (event, payload) => {
+  const { arrayBuffer, method = 'ai', color = 'green', tolerance = 60.0, softness = 10.0, modelName = 'u2net' } = payload;
+  
+  const tempDir = app.getPath('temp');
+  const tempInputPath = path.join(tempDir, `ari_bg_in_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.mp4`);
+  const tempOutputPath = path.join(tempDir, `ari_bg_out_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webm`);
+  
+  try {
+    // Write buffer to temp input file
+    fs.writeFileSync(tempInputPath, Buffer.from(arrayBuffer));
+
+    const pythonBin = '/Users/tanishagupta/.gemini/antigravity-ide/scratch/venv/bin/python';
+    const scriptPath = '/Users/tanishagupta/.gemini/antigravity-ide/scratch/automations/video_processing/remove_video_bg.py';
+
+    const args = [
+      scriptPath,
+      '-i', tempInputPath,
+      '-o', tempOutputPath,
+      '-m', method,
+      '-f', 'webm',
+      '-c', color,
+      '-t', String(tolerance),
+      '-s', String(softness),
+      '--model', modelName
+    ];
+
+    console.log("MAIN PROCESS: Launching bg removal automation:", pythonBin, args.join(' '));
+    const pyProcess = spawn(pythonBin, args);
+
+    pyProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      const match = output.match(/PROGRESS:(\d+)/);
+      if (match && dashboardWindow && !dashboardWindow.isDestroyed()) {
+        dashboardWindow.webContents.send('remove-video-bg-progress', { progress: parseInt(match[1], 10) });
+      }
+    });
+
+    let errorLog = '';
+    pyProcess.stderr.on('data', (data) => {
+      errorLog += data.toString();
+    });
+
+    pyProcess.on('close', (code) => {
+      console.log("MAIN PROCESS: Python process finished with code:", code);
+      if (code === 0 && fs.existsSync(tempOutputPath)) {
+        const transparentBuffer = fs.readFileSync(tempOutputPath);
+        
+        // Clean up temp files
+        try { fs.unlinkSync(tempInputPath); } catch(e) {}
+        try { fs.unlinkSync(tempOutputPath); } catch(e) {}
+
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.webContents.send('remove-video-bg-complete', {
+            success: true,
+            buffer: transparentBuffer
+          });
+        }
+      } else {
+        // Clean up temp input
+        try { fs.unlinkSync(tempInputPath); } catch(e) {}
+        if (fs.existsSync(tempOutputPath)) {
+          try { fs.unlinkSync(tempOutputPath); } catch(e) {}
+        }
+        
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.webContents.send('remove-video-bg-complete', {
+            success: false,
+            error: errorLog || `Python process exited with code ${code}`
+          });
+        }
+      }
+    });
+  } catch(e) {
+    console.error("MAIN PROCESS: Error launching bg removal:", e);
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+      dashboardWindow.webContents.send('remove-video-bg-complete', {
+        success: false,
+        error: e.message
+      });
+    }
   }
 });
 

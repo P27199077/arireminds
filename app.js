@@ -1102,6 +1102,120 @@ function setupVideoUploadZones() {
       }
     }
   });
+
+  // Background Removal Automation Buttons
+  const btnRemoveBgAi = document.getElementById('btn-remove-bg-ai');
+  const btnRemoveBgChroma = document.getElementById('btn-remove-bg-chroma');
+  const progressContainer = document.getElementById('bg-remove-progress-container');
+  const statusLbl = document.getElementById('bg-remove-status-lbl');
+  const pctLbl = document.getElementById('bg-remove-pct-lbl');
+  const progressBar = document.getElementById('bg-remove-progress-bar');
+
+  async function startBackgroundRemoval(method) {
+    if (!state.editingReminder) return;
+
+    let videoFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+    let videoBlob = null;
+
+    if (!videoFile) {
+      const key = `${state.editingReminder.id}_combined`;
+      videoBlob = await getVideoBlob(key);
+    }
+
+    if (!videoFile && !videoBlob) {
+      alert("Please upload a video file first before removing the background!");
+      return;
+    }
+
+    const sourceBlob = videoFile || videoBlob;
+    statusLbl.textContent = method === 'ai' ? "Extracting frames & running AI segmentation (rembg)..." : "Processing chroma key color extraction...";
+    pctLbl.textContent = "0%";
+    progressBar.style.width = "0%";
+    progressContainer.style.display = "flex";
+    if (btnRemoveBgAi) btnRemoveBgAi.disabled = true;
+    if (btnRemoveBgChroma) btnRemoveBgChroma.disabled = true;
+
+    try {
+      const arrayBuffer = await sourceBlob.arrayBuffer();
+      if (isElectron) {
+        ipcRenderer.send('remove-video-bg', {
+          arrayBuffer,
+          method: method,
+          color: 'green',
+          tolerance: 60.0,
+          softness: 10.0,
+          modelName: 'u2net'
+        });
+      } else {
+        alert("Background removal automation requires running in the Electron Desktop App!");
+        progressContainer.style.display = "none";
+        if (btnRemoveBgAi) btnRemoveBgAi.disabled = false;
+        if (btnRemoveBgChroma) btnRemoveBgChroma.disabled = false;
+      }
+    } catch(err) {
+      console.error("Error starting background removal:", err);
+      alert("Failed to read video file buffer: " + err.message);
+      progressContainer.style.display = "none";
+      if (btnRemoveBgAi) btnRemoveBgAi.disabled = false;
+      if (btnRemoveBgChroma) btnRemoveBgChroma.disabled = false;
+    }
+  }
+
+  if (btnRemoveBgAi) {
+    btnRemoveBgAi.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startBackgroundRemoval('ai');
+    });
+  }
+
+  if (btnRemoveBgChroma) {
+    btnRemoveBgChroma.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startBackgroundRemoval('chroma');
+    });
+  }
+
+  if (isElectron) {
+    ipcRenderer.on('remove-video-bg-progress', (event, data) => {
+      const pct = data.progress || 0;
+      if (pctLbl) pctLbl.textContent = `${pct}%`;
+      if (progressBar) progressBar.style.width = `${pct}%`;
+      if (statusLbl) statusLbl.textContent = `Processing video frames (${pct}%)...`;
+    });
+
+    ipcRenderer.on('remove-video-bg-complete', async (event, res) => {
+      if (btnRemoveBgAi) btnRemoveBgAi.disabled = false;
+      if (btnRemoveBgChroma) btnRemoveBgChroma.disabled = false;
+      
+      if (res.success && res.buffer) {
+        try {
+          const transparentBlob = new Blob([res.buffer], { type: 'video/webm' });
+          const key = `${state.editingReminder.id}_combined`;
+          await saveVideoBlob(key, transparentBlob);
+          state.editingReminder.hasCombinedVideo = true;
+
+          if (videoEl.src) URL.revokeObjectURL(videoEl.src);
+          videoEl.src = URL.createObjectURL(transparentBlob);
+          previewContainer.classList.add('has-video');
+
+          if (pctLbl) pctLbl.textContent = "100%";
+          if (progressBar) progressBar.style.width = "100%";
+          if (statusLbl) statusLbl.textContent = "✓ Background removed successfully!";
+          showNotification('BG Removed', 'Transparent WebM video created and saved!');
+          setTimeout(() => {
+            if (progressContainer) progressContainer.style.display = "none";
+          }, 3000);
+        } catch(e) {
+          console.error("Error saving transparent video blob:", e);
+          alert("Error saving output video: " + e.message);
+          if (progressContainer) progressContainer.style.display = "none";
+        }
+      } else {
+        alert("Background Removal Failed: " + (res.error || "Unknown error"));
+        if (progressContainer) progressContainer.style.display = "none";
+      }
+    });
+  }
 }
 
 // ----------------------------------------------------

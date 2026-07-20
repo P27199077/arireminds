@@ -415,6 +415,35 @@
             <p style="color: var(--text-muted); font-size: 0.65rem; line-height: 1.25; margin: 0;">
               ℹ️ Combined video split points: `0.0s` to `Divide 1` is Greeting, `Divide 1` to `Divide 2` loops, and `Divide 2` to end is Walk-Out.
             </p>
+
+            <!-- Background Removal Automation Controls -->
+            <div id="bg-remove-toolbar" style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(157, 78, 221, 0.3); border-radius: var(--border-radius-sm); padding: 8px 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-size: 0.72rem; color: var(--secondary); font-weight: 600; white-space: nowrap;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Background Remover
+                </span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" id="btn-remove-bg-ai" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.68rem; border-color: rgba(157, 78, 221, 0.4); background: rgba(157, 78, 221, 0.15);" title="Uses AI rembg model to strip complex backgrounds">
+                    <i class="fa-solid fa-robot" style="color: var(--primary); margin-right: 3px;"></i> Remove BG (AI)
+                  </button>
+                  <button type="button" id="btn-remove-bg-chroma" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.68rem; border-color: rgba(6, 214, 160, 0.4); background: rgba(6, 214, 160, 0.15);" title="Removes Green / Solid Color Screen">
+                    <i class="fa-solid fa-eye-dropper" style="color: var(--success); margin-right: 3px;"></i> Chroma (Green)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Progress Bar Indicator -->
+              <div id="bg-remove-progress-container" style="display: none; flex-direction: column; gap: 4px; margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                  <span id="bg-remove-status-lbl">Extracting & processing video frames...</span>
+                  <span id="bg-remove-pct-lbl" style="font-weight: bold; color: var(--secondary);">0%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden;">
+                  <div id="bg-remove-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--secondary), var(--primary)); transition: width 0.2s ease;"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>
