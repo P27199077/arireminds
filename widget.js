@@ -175,10 +175,19 @@ async function setWidgetState(stateName) {
             await videoPlayer.play();
           }
           
+          let isLoopResetting = false;
           startVideoTimeWatcher((player) => {
-            if (player.seeking) return;
-            if (player.currentTime >= dividePoint2) {
+            if (player.seeking || isLoopResetting) return;
+            if (dividePoint2 > dividePoint1 && player.currentTime >= dividePoint2) {
+              isLoopResetting = true;
               player.currentTime = dividePoint1;
+              player.play().then(() => {
+                isLoopResetting = false;
+              }).catch(() => {
+                isLoopResetting = false;
+              });
+            } else if (player.paused && activeState === 'ask') {
+              player.play().catch(() => {});
             }
           });
         } catch(e) {
