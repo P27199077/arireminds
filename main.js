@@ -51,8 +51,8 @@ ipcMain.on('trigger-widget', (event, payload) => {
   const { width: screenW, height: screenH, x: screenX, y: screenY } = primaryDisplay.workArea;
 
   const scale = payload.settings.scale || 1.0;
-  const widgetW = Math.max(480, Math.round(420 * Math.max(1.0, scale)));
-  const widgetH = Math.max(520, Math.round(440 * Math.max(1.0, scale)));
+  const widgetW = Math.max(500, Math.round(440 * Math.max(1.0, scale)));
+  const widgetH = Math.max(540, Math.round(460 * Math.max(1.0, scale)));
 
   // Position coordinates configurations
   let left = screenX + screenW - widgetW - 20;
@@ -125,8 +125,8 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
   const { width: screenW, height: screenH, x: screenX, y: screenY } = primaryDisplay.workArea;
 
   const scale = (payload.settings && payload.settings.scale) ? payload.settings.scale : 1.0;
-  const widgetW = Math.max(460, Math.round(400 * Math.max(1.0, scale)));
-  const widgetH = Math.max(460, Math.round(400 * Math.max(1.0, scale)));
+  const widgetW = Math.max(500, Math.round(440 * Math.max(1.0, scale)));
+  const widgetH = Math.max(540, Math.round(460 * Math.max(1.0, scale)));
 
   let left = payload.settings.customX !== undefined ? payload.settings.customX : screenX + Math.round((screenW - widgetW) / 2);
   let top = payload.settings.customY !== undefined ? payload.settings.customY : screenY + Math.round((screenH - widgetH) / 3);
@@ -165,7 +165,7 @@ ipcMain.on('trigger-widget-positioner', (event, payload) => {
 });
 
 ipcMain.on('save-custom-position', (event, arg) => {
-  console.log("MAIN PROCESS: save-custom-position received with scale, crop, bubblePos, textScale:", arg);
+  console.log("MAIN PROCESS: save-custom-position received with scale, crop, bubblePos, textScale, mascotX, mascotY:", arg);
   if (widgetWindow && dashboardWindow) {
     const [x, y] = widgetWindow.getPosition();
     console.log("MAIN PROCESS: Widget position is:", x, y, "Sending custom-position-saved to dashboard renderer");
@@ -176,12 +176,20 @@ ipcMain.on('save-custom-position', (event, arg) => {
       crop: arg.crop,
       bubblePosition: arg.bubblePosition,
       textScale: arg.textScale,
-      bubbleGap: arg.bubbleGap
+      bubbleGap: arg.bubbleGap,
+      mascotX: arg.mascotX,
+      mascotY: arg.mascotY
     });
     widgetWindow.close();
     widgetWindow = null;
   } else {
     console.warn("MAIN PROCESS: Warning - widgetWindow or dashboardWindow was null!", !!widgetWindow, !!dashboardWindow);
+  }
+});
+
+ipcMain.on('align-mascot-window', (event, arg) => {
+  if (widgetWindow && arg && arg.x !== undefined && arg.y !== undefined) {
+    widgetWindow.setPosition(Math.round(arg.x), Math.round(arg.y));
   }
 });
 
@@ -232,7 +240,8 @@ ipcMain.on('remove-video-bg', async (event, payload) => {
       '-c', color,
       '-t', String(tolerance),
       '-s', String(softness),
-      '--model', modelName
+      '--model', 'isnet-general-use',
+      '--alpha-matting'
     ];
 
     console.log("MAIN PROCESS: Launching bg removal automation:", pythonBin, args.join(' '));

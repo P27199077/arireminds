@@ -9,6 +9,45 @@
 const isElectron = typeof require !== 'undefined' && require('electron');
 const ipcRenderer = isElectron ? require('electron').ipcRenderer : null;
 
+// Toast Notification System Helper
+function showNotification(title, message) {
+  console.log(`NOTIFICATION [${title}]: ${message}`);
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.style.cssText = `
+    background: rgba(20, 15, 35, 0.95);
+    border: 1px solid #00f0ff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: white;
+    font-size: 0.82rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    pointer-events: auto;
+  `;
+  toast.innerHTML = `<strong style="color: #00f0ff;">${title}</strong><div style="font-size: 0.75rem; color: #a0a0b0; margin-top: 2px;">${message}</div>`;
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+
 // Global App State
 const state = {
   tasks: [],
@@ -869,7 +908,9 @@ async function triggerWidgetWindow(reminder) {
       crop: reminder.crop || { top: 0, bottom: 0, left: 0, right: 0 },
       bubblePosition: reminder.bubblePosition || 'top',
       textScale: reminder.textScale || 1.0,
-      bubbleGap: reminder.bubbleGap !== undefined ? reminder.bubbleGap : 8
+      bubbleGap: reminder.bubbleGap !== undefined ? reminder.bubbleGap : 8,
+      mascotX: reminder.mascotX,
+      mascotY: reminder.mascotY
     },
     hasCombinedVideo: !!reminder.hasCombinedVideo,
     dividePoint1: reminder.dividePoint1 || 0.0,
@@ -1377,6 +1418,12 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (arg.bubbleGap !== undefined) {
           state.editingReminder.bubbleGap = arg.bubbleGap;
         }
+        if (arg.mascotX !== undefined) {
+          state.editingReminder.mascotX = arg.mascotX;
+        }
+        if (arg.mascotY !== undefined) {
+          state.editingReminder.mascotY = arg.mascotY;
+        }
         
         // Update the drawer inputs in real-time
         document.getElementById('cfg-screen-position').value = 'custom';
@@ -1396,6 +1443,8 @@ window.addEventListener('DOMContentLoaded', async () => {
           if (arg.bubblePosition) state.reminders[idx].bubblePosition = arg.bubblePosition;
           if (arg.textScale) state.reminders[idx].textScale = arg.textScale;
           if (arg.bubbleGap !== undefined) state.reminders[idx].bubbleGap = arg.bubbleGap;
+          if (arg.mascotX !== undefined) state.reminders[idx].mascotX = arg.mascotX;
+          if (arg.mascotY !== undefined) state.reminders[idx].mascotY = arg.mascotY;
         }
         
         saveReminders();
