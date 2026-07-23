@@ -639,6 +639,11 @@ function handleProfileFormSubmit(e) {
     existing.customX = state.editingReminder.customX;
     existing.customY = state.editingReminder.customY;
     existing.crop = state.editingReminder.crop || { top: 0, bottom: 0, left: 0, right: 0 };
+    existing.bubblePosition = state.editingReminder.bubblePosition || 'top';
+    existing.textScale = state.editingReminder.textScale || 1.0;
+    existing.bubbleGap = state.editingReminder.bubbleGap !== undefined ? state.editingReminder.bubbleGap : 8;
+    existing.mascotX = state.editingReminder.mascotX;
+    existing.mascotY = state.editingReminder.mascotY;
     existing.hasCombinedVideo = state.editingReminder.hasCombinedVideo;
     existing.dividePoint1 = dividePoint1;
     existing.dividePoint2 = dividePoint2;
@@ -1362,7 +1367,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Bind Set Custom Position button click
   document.getElementById('btn-set-custom-pos').addEventListener('click', () => {
     if (isElectron && state.editingReminder) {
-      // Pull scale from current scale slider in the drawer
       const currentScale = parseFloat(document.getElementById('cfg-popup-scale').value);
       state.editingReminder.scale = currentScale;
       
@@ -1374,7 +1378,13 @@ window.addEventListener('DOMContentLoaded', async () => {
           scale: currentScale,
           customX: state.editingReminder.customX,
           customY: state.editingReminder.customY,
-          texts: state.editingReminder.texts
+          texts: state.editingReminder.texts,
+          crop: state.editingReminder.crop || { top: 0, bottom: 0, left: 0, right: 0 },
+          bubblePosition: state.editingReminder.bubblePosition || 'top',
+          textScale: state.editingReminder.textScale || 1.0,
+          bubbleGap: state.editingReminder.bubbleGap !== undefined ? state.editingReminder.bubbleGap : 8,
+          mascotX: state.editingReminder.mascotX,
+          mascotY: state.editingReminder.mascotY
         },
         hasCombinedVideo: !!state.editingReminder.hasCombinedVideo,
         dividePoint1: state.editingReminder.dividePoint1 || 0.0,
