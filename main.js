@@ -5,13 +5,60 @@
  * monitors coordinate math for screens, and routes IPC messages.
  */
 
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
 let dashboardWindow = null;
 let widgetWindow = null;
+let tray = null;
+let isQuitting = false;
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'tray-icon.png');
+  if (!fs.existsSync(iconPath)) {
+    // Write 16x16 transparent purple circle PNG to file system
+    fs.writeFileSync(iconPath, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMElEQVQ4T2N8z8DwhwGHgCFCGBgYGBghbIAyGBgYoBgFozmEEB6jOQSDMRyC0RxC/AMAo30JA24M6wAAAABJRU5ErkJggg==', 'base64'));
+  }
+  
+  const icon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(icon);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    { 
+      label: 'Show Dashboard', 
+      click: () => {
+        if (dashboardWindow) {
+          dashboardWindow.show();
+          dashboardWindow.focus();
+        }
+      } 
+    },
+    { type: 'separator' },
+    { 
+      label: 'Quit Ari Reminds', 
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      } 
+    }
+  ]);
+  
+  tray.setToolTip('Ari Reminds - Desktop Mascot Assistant');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (dashboardWindow) {
+      if (dashboardWindow.isVisible()) {
+        dashboardWindow.hide();
+      } else {
+        dashboardWindow.show();
+        dashboardWindow.focus();
+      }
+    }
+  });
+}
 
 function createDashboardWindow() {
   dashboardWindow = new BrowserWindow({
@@ -28,13 +75,19 @@ function createDashboardWindow() {
 
   dashboardWindow.loadFile('index.html');
 
+  // Minimize/Hide to tray when clicking close (x) button
+  dashboardWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      dashboardWindow.hide();
+    }
+  });
+
   dashboardWindow.on('closed', () => {
     dashboardWindow = null;
-    // If main dashboard is closed, exit the application
     if (widgetWindow) {
       widgetWindow.close();
     }
-    app.quit();
   });
 }
 
@@ -303,6 +356,7 @@ ipcMain.on('remove-video-bg', async (event, payload) => {
 
 // App lifecycle triggers
 app.whenReady().then(() => {
+  createTray();
   createDashboardWindow();
 
   app.on('activate', () => {
@@ -310,6 +364,10 @@ app.whenReady().then(() => {
       createDashboardWindow();
     }
   });
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('window-all-closed', () => {
